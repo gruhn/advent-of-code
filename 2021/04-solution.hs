@@ -37,13 +37,13 @@ markBoard draw = map (delete draw)
 isBingo :: Board -> Bool
 isBingo = elem []
 
-play :: [Int] -> [Board] -> [Bingo]
-play [] _ = []
-play (draw:draws) boards = 
+bingosInOrder :: [Int] -> [Board] -> [Bingo]
+bingosInOrder [] _ = []
+bingosInOrder (draw:draws) boards = 
     let boardsMarked = map (markBoard draw) boards
         (bingoBoards, noBingoBoards) = partition isBingo boardsMarked
         bingos = map (draw,) bingoBoards
-    in bingos ++ play draws noBingoBoards
+    in bingos ++ bingosInOrder draws noBingoBoards
 
 bingoScore :: Bingo -> Int
 bingoScore (lastDraw, board) = 
@@ -53,8 +53,8 @@ main :: IO ()
 main = do
     input <- readFile "04-input.txt"
     let (draws, boards) = parseInput input
-    let bingosInOrder = play draws boards
+    let bingos = bingosInOrder draws boards
     putStrLn "Part 1:"
-    print $ bingoScore . head $ bingosInOrder
+    print $ bingoScore (head bingos)
     putStrLn "Part 2:"
-    print $ bingoScore . last $ bingosInOrder
+    print $ bingoScore (last bingos)
