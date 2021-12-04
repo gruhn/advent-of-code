@@ -1,19 +1,15 @@
 #!/usr/bin/env stack
-{-# LANGUAGE TupleSections #-}
 -- stack --resolver lts-18.18 script
-import Data.List (elemIndex, transpose, find, nub, partition)
+{-# LANGUAGE TupleSections #-}
+module Day04 where 
+    
+import Data.List (elemIndex, transpose, find, nub, partition, delete)
 
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn sep list =
     case elemIndex sep list of 
         Just index -> take index list : splitOn sep (drop (index+1) list)
         Nothing    -> [list]
-
-remove :: Eq a => a -> [a] -> [a]
-remove _ [] = []
-remove a (x:xs) 
-    | a == x    = xs
-    | otherwise = x : remove a xs
 
 type Board = [[Int]]
 type Bingo = (Int, Board)
@@ -36,16 +32,16 @@ parseInput input =
     in (parseDraws draws, parseBoards boards)
 
 markBoard :: Int -> Board -> Board
-markBoard draw = map (remove draw)
+markBoard draw = map (delete draw)
 
-bingo :: Board -> Bool
-bingo = elem []
+isBingo :: Board -> Bool
+isBingo = elem []
 
 play :: [Int] -> [Board] -> [Bingo]
 play [] _ = []
 play (draw:draws) boards = 
     let boardsMarked = map (markBoard draw) boards
-        (bingoBoards, noBingoBoards) = partition bingo boardsMarked
+        (bingoBoards, noBingoBoards) = partition isBingo boardsMarked
         bingos = map (draw,) bingoBoards
     in bingos ++ play draws noBingoBoards
 
