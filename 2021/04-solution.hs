@@ -2,20 +2,14 @@
 -- stack --resolver lts-18.18 script
 {-# LANGUAGE TupleSections #-}
 module Day04 where 
-    
 import Data.List (elemIndex, transpose, find, nub, partition, delete)
-
-splitOn :: Eq a => a -> [a] -> [[a]]
-splitOn sep list =
-    case elemIndex sep list of 
-        Just index -> take index list : splitOn sep (drop (index+1) list)
-        Nothing    -> [list]
+import ParseUtil (splitOn)
 
 type Board = [[Int]]
 type Bingo = (Int, Board)
 
 parseDraws :: String -> [Int]
-parseDraws = map read . splitOn ','
+parseDraws = map read . splitOn ","
 
 parseBoard :: [String] -> Board
 parseBoard lines =
@@ -24,7 +18,7 @@ parseBoard lines =
     in rows ++ cols
 
 parseBoards :: [String] -> [Board]
-parseBoards = map parseBoard . splitOn "" 
+parseBoards = map parseBoard . splitOn [""]
 
 parseInput :: String -> ([Int], [Board])
 parseInput input =
