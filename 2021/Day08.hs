@@ -2,7 +2,7 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-18.18 script
 
-module Day07 where
+module Day08 where
 import ParseUtil (splitOn)
 import Data.List ((\\), find, delete, findIndex, elemIndex, sort, intersperse, intersect)
 import qualified Data.Map as Map
@@ -19,7 +19,7 @@ parse = mapM parseLine . lines
 
 main :: IO ()
 main = do
-    input <- readFile "08-input2.txt"
+    input <- readFile "08-input.txt"
     let decoded = decode input
     putStr "Part 1: "
     print $ length . filter (`elem` [1,4,7,8]) . concat <$> decoded
