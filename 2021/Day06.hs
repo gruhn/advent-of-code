@@ -35,3 +35,10 @@ descendantCount' days age
     = sum 
     . map (\(n,k) -> binom (n+k) k) 
     $ map (\x -> (x, ((days+6-age) - 7*x) `div` 9)) [0..maxGenerations (days+6-age)]
+    
+descendantCount'' :: Integer -> Integer -> Integer
+descendantCount'' days offset =
+  let days' = days - (offset + 1)
+      max8 = days' `div` (8+1)
+      max6 n = (days' - (8+1)*n) `div` (6+1)
+  in 1 + sum [ binom (n+m) n | n <- [0 .. max8], m <- [0 .. max6 n] ]
