@@ -12,9 +12,9 @@ main = do
     input <- readFile "06-input.txt"
     let ages = parseInput input
     putStr "Part 1: "
-    print $ sum $ map (descendantCount 80) input
+    print $ sum $ map (descendantCount 80) ages
     putStr "Part 2: "
-    print $ sum $ map (descendantCount 256) input
+    print $ sum $ map (descendantCount 256) ages
   
 binom :: Integer -> Integer -> Integer
 binom n k 
