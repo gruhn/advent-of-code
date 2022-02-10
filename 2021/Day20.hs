@@ -1,7 +1,5 @@
-{-# LANGUAGE TupleSections #-}
-
--- stack --resolver lts-18.18 runghc
 module Day20 where
+
 import Text.Parsec.String
 import Text.Parsec
 import qualified Data.Set as Set

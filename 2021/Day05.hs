@@ -1,7 +1,5 @@
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
-
 module Day05 where 
+
 import ParseUtil (splitOn)
 import qualified Data.Map as Map
 

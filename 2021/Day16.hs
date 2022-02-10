@@ -1,5 +1,5 @@
--- stack --resolver lts-18.18 runghc
 module Day16 where
+
 import Text.Parsec
 import Text.Parsec.String 
 import Data.Char (digitToInt)

@@ -1,7 +1,5 @@
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
-
 module Day10 where
+
 import Data.List (sort)
 
 data Line = Correct | Incorrect Char | Incomplete [Char]
