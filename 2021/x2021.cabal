@@ -22,6 +22,7 @@ executable x2021
     -- Modules included in this executable, other than Main.
     other-modules:    Day15
                     , Day18
+                    , Day21
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
