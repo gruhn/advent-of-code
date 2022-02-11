@@ -7,7 +7,7 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Map as Map
 import Text.Parsec.String (Parser, parseFromFile)
 import Data.Maybe (mapMaybe)
-import Data.Either
+import Data.Either ()
 
 type Cave = Map.Map (Int, Int) Int
 

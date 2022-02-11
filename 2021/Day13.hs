@@ -1,5 +1,5 @@
--- stack runghc --resolver lts-18.18
 module Day13 where
+
 import Text.Parsec
 import Text.Parsec.String
 import qualified Data.Set as Set
