@@ -23,6 +23,7 @@ executable x2021
     other-modules:    Day15
                     , Day18
                     , Day21
+                    , Day22
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
