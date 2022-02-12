@@ -7,24 +7,12 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Map as Map
 import Text.Parsec.String (Parser, parseFromFile)
 import Data.Maybe (mapMaybe)
-import Data.Either ()
+import ParseUtil (Grid(..), gridP)
 
-type Cave = Map.Map (Int, Int) Int
+type Cave = Grid Int
 
-fromGrid :: [[Int]] -> Cave
-fromGrid grid =
-    let go (x,y) [] = Map.empty
-        go (x,y) ([]:rows) = go (0,y+1) rows
-        go (x,y) ((cell:row):rows) =
-            Map.insert (x,y) cell $ go (x+1,y) (row:rows)
-    in go (0,0) grid
-
-caveParser :: Parser Cave
-caveParser = do
-    charGrid <- many1 digit `sepBy` newline
-    let intGrid = map (map digitToInt) charGrid
-        cave = fromGrid intGrid
-    return cave
+caveP :: Parser Cave
+caveP = gridP (digitToInt <$> digit)
 
 type State = ((Int, Int), Int)
 
@@ -32,7 +20,7 @@ initialState :: State
 initialState = ((0,0), 0)
 
 finalState :: Cave -> State
-finalState = Map.findMax
+finalState = Map.findMax . getGrid
 
 search :: Cave -> Maybe Int
 search cave = 
@@ -42,7 +30,7 @@ search cave =
 
         decorateWithRisk :: (Int,Int) -> Maybe State
         decorateWithRisk key = do
-            risk <- Map.lookup key cave
+            risk <- Map.lookup key (getGrid cave)
             return (key, risk)
 
         expandState :: State -> [State]
@@ -68,21 +56,15 @@ multiplyCave factor cave =
         shiftCaveBy shift
             = Map.fromList 
             $ map (shiftPointBy shift)
-            $ Map.toList cave
+            $ Map.toList 
+            $ getGrid cave
 
-    in Map.unions [ shiftCaveBy (x,y) | x <- [0..factor-1], y <- [0..factor-1] ]
+    in Grid $ Map.unions [ shiftCaveBy (x,y) | x <- [0..factor-1], y <- [0..factor-1] ]
 
 day15 :: IO ()
 day15 = do
-    caveEither <- parseFromFile caveParser "15-input.txt"
+    caveEither <- parseFromFile caveP "15-input.txt"
     putStr "Part 1: "
     print $ search <$> caveEither
     putStr "Part 2: "
     print $ search . multiplyCave 5 <$> caveEither
-
-showCave :: Cave -> String
-showCave cave =
-    let (xn, yn) = fst $ finalState cave
-        showPoint xy = maybe ' ' intToDigit (Map.lookup xy cave)
-        row y = [ showPoint (x,y) | x <- [0..xn] ]
-    in unlines [ row y | y <- [0..yn]]
