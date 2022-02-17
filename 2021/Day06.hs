@@ -1,25 +1,23 @@
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
+module Day06 (day06) where
+import Text.Parsec.String (parseFromFile, Parser)
+import Text.Parsec (sepBy, char, digit, many1)
 
-module Day06 where
-import ParseUtil (splitOn)
+natP :: Parser Integer
+natP = read <$> many1 digit
 
-parseInput :: String -> [Int]
-parseInput = map read . splitOn ","
-
-main :: IO ()
-main = do
-    input <- readFile "06-input.txt"
-    let ages = parseInput input
+day06 :: IO ()
+day06 = do
+    ages <- parseFromFile (natP `sepBy` char ',') "06-input.txt"
     putStr "Part 1: "
-    print $ sum $ map (descendantCount 80) ages
+    print $ sum . map (descendantCount 80) <$> ages
     putStr "Part 2: "
-    print $ sum $ map (descendantCount 256) ages
+    print $ sum . map (descendantCount 256) <$> ages
   
 binom :: Integer -> Integer -> Integer
 binom n k 
     | k < 0     = 0
     | k > n     = 0
+    | k > n-k   = product [(k+1)..n] `div` product [1..(n-k)]
     | otherwise = product [(n-k+1)..n] `div` product [1..k]
     
 descendantCount :: Integer -> Integer -> Integer
@@ -30,5 +28,5 @@ descendantCount days age =
       max8 = days' `div` (8+1)
       -- maximum number of 6 day periods in ancestor chain given fixed number of 8s:
       max6 n = (days' - (8+1)*n) `div` (6+1)
-  in 1 + sum [ binom (n+m) n | n <- [0 .. max8], m <- [0 .. max6 n] ]
+  in 1 + sum [ (n+m) `binom` n | n <- [0 .. max8], m <- [0 .. max6 n] ]
 
