@@ -27,6 +27,8 @@ executable x2021
                     , ParseUtil
                     , Day23
                     , Day24
+                    , Day06
+                    , Day17
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
