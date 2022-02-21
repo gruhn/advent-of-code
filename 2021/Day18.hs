@@ -41,27 +41,12 @@ day18 :: IO ()
 day18 = do
     input <- parseFromFile (snailfish `sepBy` newline) "18-input.txt"
     putStr "Part 1: "
-    putStrLn ""
-    let out = unlines
-            . map show
-            . concat
-            . take 50
-            . iterate (\ss -> 
-                let s0 = last ss 
-                    s1 = explode s0
-                    s2 = split s1
-                in [s1,s2]
-            )
-            . (:[])
-            . foldl1 Node <$> input
-        
-    case out of
-        Right out' -> putStr out'
-        Left _ -> putStr "error"
-
-    putStrLn "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]"
-
+    print $ magnitude . foldl1 add <$> input
     putStr "Part 2: "
+    print $ maximum . map (magnitude . uncurry add) . pairs <$> input
+
+pairs :: [a] -> [(a,a)]
+pairs as = [ (a1, a2) | a1 <- as, a2 <- as ]
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a
@@ -69,7 +54,7 @@ converge f a
     | otherwise = converge f (f a)
 
 add :: Snailfish -> Snailfish -> Snailfish
-add s1 s2 = converge (split . explode) (Node s1 s2)
+add s1 s2 = converge (split . converge explode) (Node s1 s2)
 
 split :: Snailfish -> Snailfish
 split (Leaf n) =
