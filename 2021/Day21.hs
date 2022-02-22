@@ -1,12 +1,9 @@
-module Day21 where
+module Day21 (day21) where
 
-day21 :: IO ()
-day21 = do 
-    putStr "Part 1: "
-    let result = head . dropWhile ((< 1000) . topScore) $ iterate step (0, 1, 5, 0, 0)
-        (n, _, _, s1, s2) = result
-    print result
-    print (n*3 * min s1 s2)
+import Data.MemoTrie (memo3, mup)
+import Data.Tuple (swap)
+
+memo4 = mup memo3
 
 topScore :: State -> Int
 topScore (_, _, _, s1, s2) =
@@ -26,5 +23,36 @@ step (n, p0, p1, s0, s1) =
     else 
         (n+1, p0, newPos n p1, s0, s1 + newPos n p1)
 
--- frequencies = [ | sum <- [(1+1+1) .. (3+3+3)] ]
-sums = [ sum [s1,s2,s3] | s1 <- [1,2,3], s2 <- [1,2,3], s3 <- [1,2,3] ]
+dieSums :: [Integer]
+dieSums = [ s1+s2+s3 | s1 <- [1,2,3], s2 <- [1,2,3], s3 <- [1,2,3] ]
+
+type State2 = (Integer, Integer, Integer, Integer)
+
+move :: State2 -> Integer -> State2
+move (p0,p1,s0,s1) x =
+    let p0' = (p0+x-1) `rem` 10 +1
+        -- p1' = (p1+x-1) `rem` 10 +1
+    in (p0', p1, s0+p0', s1)
+
+uncurry4 :: (a -> b -> c -> d -> e) -> (a,b,c,d) -> e
+uncurry4 f (a,b,c,d) = f a b c d
+
+winCount :: Integer -> Integer -> Integer -> Integer -> (Integer, Integer)
+winCount p0 p1 s0 s1
+    | s0 >= 21 = (1,0)
+    | s1 >= 21 = (0,1)
+    | otherwise = foldr addVec (0,0) nextStates where
+        state = (p1,p0,s1,s0)
+        nextStates = map (swap . uncurry4 winCountMemo . move state) dieSums
+        addVec (a,b) (c,d) = (a+c,b+d)
+
+winCountMemo = memo4 winCount
+
+day21 :: IO ()
+day21 = do 
+    putStr "Part 1: "
+    let result = head . dropWhile ((< 1000) . topScore) $ iterate step (0, 1, 5, 0, 0)
+        (n, _, _, s1, s2) = result
+    print (n*3 * min s1 s2)
+    putStrLn "Part 2: "
+    print $ uncurry max $ winCountMemo 5 1 0 0
