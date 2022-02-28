@@ -15,7 +15,7 @@ register(Var) --> [Char], !, { atom_codes(Var, [Char]) }.
 value(Val) --> int(Val), !.
 value(Var) --> register(Var).
 
-instr((inp, Reg)) 	   --> "inp ", !, register(Reg).
+instr((inp, Reg))      --> "inp ", !, register(Reg).
 instr((add, Reg, Val)) --> "add ", !, register(Reg), " ", value(Val).
 instr((mul, Reg, Val)) --> "mul ", !, register(Reg), " ", value(Val).
 instr((mod, Reg, Val)) --> "mod ", !, register(Reg), " ", value(Val).
@@ -24,7 +24,7 @@ instr((eql, Reg, Val)) --> "eql ", !, register(Reg), " ", value(Val).
 
 lines([L|Ls]) --> instr(L), "\n", !, lines(Ls).
 lines([L])    --> instr(L), !.
-lines([]) 	  --> [].
+lines([])     --> [].
 
 instructions(Instr) :-
     phrase_from_file(lines(Instr), "24-input.txt").
@@ -87,7 +87,7 @@ label_min(X, min(X)).
 
 maximum(Vars) :-
     maplist(label_max, Vars, VarsLabeled),
-	labeling(VarsLabeled, Vars).
+    labeling(VarsLabeled, Vars).
 
 minimum(Vars) :-
     maplist(label_min, Vars, VarsLabeled),
@@ -96,11 +96,11 @@ minimum(Vars) :-
 part1(Input) :-
     length(Input, 14),
     Input ins 1..9,
-	instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
-   	maximum(Input).
+    instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
+    maximum(Input).
 
 part2(Input) :-
     length(Input, 14),
     Input ins 1..9,
-	instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
-   	minimum(Input).
+    instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
+    minimum(Input).
