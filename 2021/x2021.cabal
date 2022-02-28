@@ -26,7 +26,6 @@ executable x2021
                     , Day22
                     , ParseUtil
                     , Day23
-                    , Day24
                     , Day06
                     , Day17
                     , Day19
