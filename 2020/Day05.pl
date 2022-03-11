@@ -28,7 +28,7 @@ list_max(Ls, Max) :-
 enum_skip(Ls, Skip) :-
     sort(Ls, Enum),
     X + 2 #= Y,
-    append(_, [X,Y|_], Enum),
+    nextto(X, Y, Enum),
     Skip #= X + 1.
 
 solution(Part1, Part2) :-
