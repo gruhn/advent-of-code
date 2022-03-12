@@ -31,6 +31,7 @@ executable x2020
                     , Day15
                     , Day13
                     , Day12
+                    , Day16
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
