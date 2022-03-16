@@ -1100,4 +1100,3 @@ hcl:#7d3b0c pid:431742871
 ecl:hzl hgt:169cm cid:340
 eyr:2023
 iyr:2017 byr:1994
-
