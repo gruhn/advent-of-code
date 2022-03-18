@@ -1,6 +1,6 @@
 module Day22 where
 import Text.Parsec.String (Parser, parseFromFile)
-import Text.Parsec (string, many1, (<|>), newline, sepBy, char, option)
+import Text.Parsec (string, many1, (<|>), newline, sepBy, char, option, try)
 import Text.Parsec.Char (digit)
 
 type Range = (Int, Int)
@@ -23,20 +23,16 @@ rangeP = do
     return (start, end)
 
 cuboidStateP :: Parser Bool
-cuboidStateP = char 'o' >> (on <|> off)
-    where
-        on = string "n" >> return True
-        off = string "ff" >> return False
+cuboidStateP = try on <|> off where
+    on = True <$ string "on"
+    off = False <$ string "off"
 
 cuboidP :: Parser (Bool, Cuboid)
 cuboidP = do
-    state <- cuboidStateP
-    string " x="
-    xRange <- rangeP
-    string ",y="
-    yRange <- rangeP
-    string ",z="
-    zRange <- rangeP
+    state  <- cuboidStateP
+    xRange <- string " x=" *> rangeP
+    yRange <- string ",y=" *> rangeP
+    zRange <- string ",z=" *> rangeP
     return (state, Cuboid xRange yRange zRange)
 
 insideInitArea :: Cuboid -> Bool
