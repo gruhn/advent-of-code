@@ -64,13 +64,14 @@ day21 = do
     case input of 
         Left err -> print err
         Right foods -> do
+            let graph = makeGraph foods
+
             putStr "Part 1: "
-            let ys = Set.unions . Map.elems $ makeGraph foods
+            let ys = Set.unions . Map.elems $ graph
             print $ sum $ fmap (Set.size . (Set.\\ ys) . fst) foods
 
             putStr "Part 2: "
-            let xs = matching (makeGraph foods)
-            print $ showPart2 <$> xs
+            print $ showPart2 <$> matching graph
 
 showPart2 :: Map String String -> String
 showPart2 
