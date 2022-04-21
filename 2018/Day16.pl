@@ -11,7 +11,7 @@
 :- use_module(library(lambda)).
 :- use_module(library(assoc), [list_to_assoc/2]).
 
-whitespace --> [C], { char_type(C, whitespace), dif(C, '\n') }.
+whitespace --> " ". % [C], { char_type(C, whitespace), dif(C, '\n') }.
 
 newline --> "\n".
 
@@ -33,7 +33,7 @@ many1(Rule, [X|Xs]) --> call(Rule, X), many(Rule, Xs).
 
 many1(Rule) --> call(Rule), many(Rule).
 
-sep_by(Item, Sep, [X|Xs]) --> call(Item, X), call(Sep), !, sep_by(Item, Sep, Xs).
+sep_by(Item, Sep, [X|Xs]) --> call(Item, X), Sep, !, sep_by(Item, Sep, Xs).
 sep_by(Item, _, [X])      --> call(Item, X).
 
 natural(N) --> many1(digit, Chars), { number_chars(N, Chars) }.
@@ -44,9 +44,9 @@ instruction(OpCode-Args) -->
     sep_by(natural, whitespace, [OpCode|Args]).
 
 sample(OpCode-[Args, Before, After]) --> 
-    "Before: [", sep_by(natural, string(", "), Before), "]", newline,
+    "Before: [", sep_by(natural, ", ", Before), "]", newline,
     instruction(OpCode-Args), newline,
-    "After:  [", sep_by(natural, string(", "), After), "]", newline.
+    "After:  [", sep_by(natural, ", ", After), "]", newline.
 
 % ---
 
