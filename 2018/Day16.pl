@@ -1,7 +1,6 @@
 :- use_module(library(dcgs)).
 :- use_module(library(clpz)).
 :- use_module(library(si)).
-:- use_module(library(charsio), [char_type/2]).
 :- use_module(library(pio), [phrase_from_file/2]).
 :- use_module(library(dif), [dif/2]).
 :- use_module(library(reif)).
@@ -10,35 +9,7 @@
 :- use_module(library(debug)).
 :- use_module(library(lambda)).
 :- use_module(library(assoc), [list_to_assoc/2]).
-
-whitespace --> " ". % [C], { char_type(C, whitespace), dif(C, '\n') }.
-
-newline --> "\n".
-
-string(S) --> S.
-
-letter(C)  --> [C], { char_type(C, alpha) }.
-
-digit(C) --> [C], { char_type(C, decimal_digit) }.
-
-% ---
-
-many(Rule, [X|Xs]) --> call(Rule, X), !, many(Rule, Xs).
-many(_, [])        --> [].
-
-many(Rule) --> call(Rule), !, many(Rule).
-many(_)    --> [].
-
-many1(Rule, [X|Xs]) --> call(Rule, X), many(Rule, Xs).
-
-many1(Rule) --> call(Rule), many(Rule).
-
-sep_by(Item, Sep, [X|Xs]) --> call(Item, X), Sep, !, sep_by(Item, Sep, Xs).
-sep_by(Item, _, [X])      --> call(Item, X).
-
-natural(N) --> many1(digit, Chars), { number_chars(N, Chars) }.
-
-% ---
+:- use_module(parse, [sep_by//3, natural//1, newline//0, whitespace//0]).
 
 instruction(OpCode-Args) -->
     sep_by(natural, whitespace, [OpCode|Args]).
