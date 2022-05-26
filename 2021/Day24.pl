@@ -1,106 +1,86 @@
-:- use_module(library(clpfd)).
+:- use_module(library(clpz)).
+:- use_module(library(lists)).
+:- use_module(library(pio), [phrase_from_file/2]).
+:- use_module(library(charsio), [char_type/2]).
 
-digits([D|T]) --> digit(D), !, digits(T). 
-digits([]) --> [].
+digits_([D|T]) --> digit_(D), !, digits_(T). 
+digits_([]) --> [].
 
-digit(D) --> [D], { code_type(D, digit) }.
+digit_(D) --> [D], { char_type(D, decimal_digit) }.
 
-uint(Int) --> digit(D), digits(Ds), { number_codes(Int, [D|Ds]) }.
+uint_(Int) --> digit_(D), digits_(Ds), { number_chars(Int, [D|Ds]) }.
 
-int(NegNum) --> "-", !, uint(Num), { NegNum #= Num * (-1) }.
-int(PosNum) --> uint(PosNum).
+int_(NegNum) --> "-", !, uint_(Num), { NegNum #= Num * (-1) }.
+int_(PosNum) --> uint_(PosNum).
 
-register(Var) --> [Char], !, { atom_codes(Var, [Char]) }.
+register_(Char) --> [Char].
 
-value(Val) --> int(Val), !.
-value(Var) --> register(Var).
+value_(#Val) --> int_(Val), !.
+value_(Var) --> register_(Var).
 
-instr((inp, Reg))      --> "inp ", !, register(Reg).
-instr((add, Reg, Val)) --> "add ", !, register(Reg), " ", value(Val).
-instr((mul, Reg, Val)) --> "mul ", !, register(Reg), " ", value(Val).
-instr((mod, Reg, Val)) --> "mod ", !, register(Reg), " ", value(Val).
-instr((div, Reg, Val)) --> "div ", !, register(Reg), " ", value(Val).
-instr((eql, Reg, Val)) --> "eql ", !, register(Reg), " ", value(Val).
+op_((inp, Reg))      --> "inp ", !, register_(Reg).
+op_((add, Reg, Val)) --> "add ", !, register_(Reg), " ", value_(Val).
+op_((mul, Reg, Val)) --> "mul ", !, register_(Reg), " ", value_(Val).
+op_(((mod), Reg, Val)) --> "mod ", !, register_(Reg), " ", value_(Val).
+op_(((div), Reg, Val)) --> "div ", !, register_(Reg), " ", value_(Val).
+op_((eql, Reg, Val)) --> "eql ", !, register_(Reg), " ", value_(Val).
 
-lines([L|Ls]) --> instr(L), "\n", !, lines(Ls).
-lines([L])    --> instr(L), !.
-lines([])     --> [].
+lines_([L|Ls]) --> op_(L), "\n", !, lines_(Ls).
+lines_([L])    --> op_(L), !.
+lines_([])     --> [].
 
-instructions(Instr) :-
-    phrase_from_file(lines(Instr), "24-input.txt").
+program(Ops) :-
+    phrase_from_file(lines_(Ops), "24-input.txt").
 
-load(Val, _, Val) :- integer(Val).
-load(w, (W,_,_,_), W).
-load(x, (_,X,_,_), X).
-load(y, (_,_,Y,_), Y).
-load(z, (_,_,_,Z), Z).
+register_state_value(w, (W,_,_,_), #W).
+register_state_value(x, (_,X,_,_), #X).
+register_state_value(y, (_,_,Y,_), #Y).
+register_state_value(z, (_,_,_,Z), #Z).
+register_state_value(#Val, _, #Val). 
 
-store(w, W, (_,X,Y,Z), (W,X,Y,Z)).
-store(x, X, (W,_,Y,Z), (W,X,Y,Z)).
-store(y, Y, (W,X,_,Z), (W,X,Y,Z)).
-store(z, Z, (W,X,Y,_), (W,X,Y,Z)).
+register_value_state0_state(w, W, (_,X,Y,Z), (W,X,Y,Z)).
+register_value_state0_state(x, X, (W,_,Y,Z), (W,X,Y,Z)).
+register_value_state0_state(y, Y, (W,X,_,Z), (W,X,Y,Z)).
+register_value_state0_state(z, Z, (W,X,Y,_), (W,X,Y,Z)).
 
-compute([], _, StateN, StateN).
-compute([(inp, Reg)|Ops], [Var|Input], State0, StateN) :-
-    store(Reg, Var, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(add, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    Out #= A + B,
-    store(RegA, Out, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(mul, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    Out #= A * B,
-    store(RegA, Out, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(div, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    Out #= A div B,
-    store(RegA, Out, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(mod, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    Out #= A mod B,
-    store(RegA, Out, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(eql, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    A #= B,
-    store(RegA, 1, State0, State1),
-    compute(Ops, Input, State1, StateN).
-compute([(eql, RegA, RegB)|Ops], Input, State0, StateN) :-
-    load(RegA, State0, A),
-    load(RegB, State0, B),
-    A #\= B,
-    store(RegA, 0, State0, State1),
-    compute(Ops, Input, State1, StateN).
+op_calc(add,A,B,C) :- C #= A + B.
+op_calc(mul,A,B,C) :- C #= A * B. 
+op_calc((mod),A,B,C) :- C #= A mod B. 
+op_calc((div),A,B,C) :- C #= A div B.
+op_calc(eql,A,B,C) :- C #<==> (A #= B).
 
-label_max(X, max(X)).
+program_input_state0_state([], _, StateN, StateN).
+program_input_state0_state([(inp, Reg)|Ops], [Var|Input], State0, StateN) :-
+    register_value_state0_state(Reg, Var, State0, State1),
+    program_input_state0_state(Ops, Input, State1, StateN).
+program_input_state0_state([(Op, RegA, RegB)|Ops], Input, State0, StateN) :-
+    register_state_value(RegA, State0, A),
+    register_state_value(RegB, State0, B),
+    op_calc(Op, A, B, Out),
+    register_value_state0_state(RegA, Out, State0, State1),
+    program_input_state0_state(Ops, Input, State1, StateN).
 
-label_min(X, min(X)).
+run(Input, (W,X,Y,Z)) :-
+    length(Input, 14),
+    Input ins 1..9,
+    program(Ps), 
+    program_input_state0_state(Ps, Input, (0,0,0,0), (W,X,Y,Z)).
+
+lift(F, V, Lifted) :-
+    Lifted =.. [F, V].
 
 maximum(Vars) :-
-    maplist(label_max, Vars, VarsLabeled),
+    maplist(lift(max), Vars, VarsLabeled),
     labeling(VarsLabeled, Vars).
 
 minimum(Vars) :-
-    maplist(label_min, Vars, VarsLabeled),
+    maplist(lift(min), Vars, VarsLabeled),
     labeling(VarsLabeled, Vars).
 
 part1(Input) :-
-    length(Input, 14),
-    Input ins 1..9,
-    instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
+    run(Input, (_,_,_,0)),
     maximum(Input).
 
 part2(Input) :-
-    length(Input, 14),
-    Input ins 1..9,
-    instructions(Ps), compute(Ps, Input, (0,0,0,0), (_,_,_,0)),
+    run(Input, (_,_,_,0)),
     minimum(Input).
