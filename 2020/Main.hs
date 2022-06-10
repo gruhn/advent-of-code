@@ -1,8 +1,8 @@
 module Main where
 
-import Day10 (parser, solver)
+import Day20 (parser, solver)
 import Data.Bifunctor (Bifunctor(bimap))
-import Text.Parsec.String (parseFromFile)
+import Text.Megaparsec (parse, errorBundlePretty)
 
 fromEither :: Either a a -> a
 fromEither (Left a) = a
@@ -10,5 +10,8 @@ fromEither (Right a) = a
 
 main :: IO ()
 main = do
-    input <- parseFromFile parser "input/10.txt"
-    fromEither $ bimap print solver input
+    input <- parse parser "" <$> readFile "input/20.txt"
+
+    case input of 
+        Left error -> putStr (errorBundlePretty error)
+        Right parsed -> solver parsed

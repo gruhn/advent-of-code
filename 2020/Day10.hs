@@ -1,13 +1,14 @@
 module Day10 (solver, parser) where
 
-import Text.Parsec.String (Parser)
-import Text.Parsec (newline, sepBy)
 import qualified Data.List as List
-import Utils (natural)
 import Data.List.NonEmpty (groupBy)
+import Text.Megaparsec.Char.Lexer (decimal)
+import Text.Megaparsec (sepBy, Parsec)
+import Text.Megaparsec.Char (newline)
+import Data.Void (Void)
 
-parser :: Parser [Int]
-parser = natural `sepBy` newline
+parser :: Parsec Void String [Int]
+parser = decimal `sepBy` newline
 
 tribonacci :: [Integer]
 tribonacci = go 0 1 1 where
