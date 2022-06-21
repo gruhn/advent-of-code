@@ -27,8 +27,8 @@ executable x2020
     -- Modules included in this executable, other than Main.
     other-modules:    Day06, Day18, Day15
                     , Day13, Day12, Day16
-                    , Day17, Day14, Day20
-                    , Day21, Day10
+                    , Day17, Day14
+                    , Day21, Day10, Day11
                     , Utils
 
     -- LANGUAGE extensions used by modules in this package.
