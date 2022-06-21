@@ -1,8 +1,14 @@
-:- module(utils, [ lexeme/3, uinteger/3, hex_number/3 ]).
+:- module(utils, [ lexeme/3, uinteger/3, hex_number/3, alpha/3, char/3 ]).
 :- use_module(library(dcg/basics)).
+:- use_module(library(clpfd)).
+
+alpha([C|Cs]) --> [C], { char_type(C, alpha) }, alpha(Cs).
+alpha([C])    --> [C], { char_type(C, alpha) }.
+
+char(Char) --> [Char].
 
 lexeme(Chars) --> string_without(" ,.\n", String), whites, 
-    { string_chars(String, Chars) }.
+    { string_chars(String, Chars), length(Chars, Len), Len #> 0 }.
 
 uinteger(Num) --> digits(Chars), { number_chars(Num, Chars) }.
 
