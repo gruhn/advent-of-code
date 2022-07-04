@@ -1,4 +1,4 @@
-module Day18 (day18) where
+module Main where
 import Text.Parsec.String (Parser, parseFromFile)
 import Data.Char (digitToInt)
 import Text.Parsec.Char (digit)
@@ -36,14 +36,6 @@ snailfish =
             char ']'
             return (Node left right)
     in leaf <|> node
-
-day18 :: IO ()
-day18 = do
-    input <- parseFromFile (snailfish `sepBy` newline) "18-input.txt"
-    putStr "Part 1: "
-    print $ magnitude . foldl1 add <$> input
-    putStr "Part 2: "
-    print $ maximum . map (magnitude . uncurry add) . pairs <$> input
 
 pairs :: [a] -> [(a,a)]
 pairs as = [ (a1, a2) | a1 <- as, a2 <- as ]
@@ -108,3 +100,11 @@ magnitude (Leaf n) = n
 magnitude (Node left right)
     = magnitude left * 3 
     + magnitude right * 2
+
+main :: IO ()
+main = do
+    input <- parseFromFile (snailfish `sepBy` newline) "18-input.txt"
+    putStr "Part 1: "
+    print $ magnitude . foldl1 add <$> input
+    putStr "Part 2: "
+    print $ maximum . map (magnitude . uncurry add) . pairs <$> input
