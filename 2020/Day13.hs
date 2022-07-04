@@ -1,4 +1,4 @@
-module Day13 (day13) where
+module Main where
 import Data.Tuple (swap)
 import Text.Parsec.String (Parser, parseFromFile)
 import Text.Parsec (digit, many1, newline, char, sepBy, (<|>))
@@ -48,9 +48,9 @@ part1 (time, busses) =
             $ map (\b -> (b, b - time `mod` b)) busses'
     in busId * waitTime
 
-day13 :: IO ()
-day13 = do
-    input <- parseFromFile parser "input/13.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile parser "2020/input/13.txt"
 
     putStr "Part 1 : "
     print $ part1 <$> input

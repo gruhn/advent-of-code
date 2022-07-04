@@ -1,4 +1,4 @@
-module Day14 where
+module Main where
 
 import Text.Parsec
 import Text.Parsec.String
@@ -24,7 +24,7 @@ rule = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "14-input.txt"
+    inputRaw <- readFile "2021/14-input.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
     let results = do
             (template, rules) <- parsed

@@ -1,4 +1,5 @@
-module Day20 where
+{-# LANGUAGE TupleSections #-}
+module Main where
 
 import Text.Parsec.String
 import Text.Parsec
@@ -51,7 +52,7 @@ puzzleInput = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "20-input.txt"
+    inputRaw <- readFile "2021/20-input.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
         result = do 
             (algo, plane) <- parsed

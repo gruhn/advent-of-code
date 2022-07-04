@@ -1,4 +1,4 @@
-module Day23 (day23) where
+module Main where
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Set (Set)
@@ -131,8 +131,8 @@ finalState = Map.fromList
     , ((8,-1),D), ((8,-2),D), ((8,-3),D), ((8,-4),D)
     ]
 
-day23 :: IO ()
-day23 = do
+main :: IO ()
+main = do
     let (cost, path) = fromJust $ aStarAssoc nextStates costLowerBound (== finalState) initialState
     putStr $ unlines . map showBoard $ path
     print cost

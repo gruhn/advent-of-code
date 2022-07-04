@@ -1,11 +1,12 @@
-module Day10 (solver, parser) where
+module Main where
 
 import qualified Data.List as List
 import Data.List.NonEmpty (groupBy)
 import Text.Megaparsec.Char.Lexer (decimal)
-import Text.Megaparsec (sepBy, Parsec)
+import Text.Megaparsec (sepBy, Parsec, parse, errorBundlePretty)
 import Text.Megaparsec.Char (newline)
 import Data.Void (Void)
+import Data.Either.Extra (fromEither)
 
 parser :: Parsec Void String [Int]
 parser = decimal `sepBy` newline
@@ -29,3 +30,10 @@ solver jolts = do
         lengths = map ((+1) . length) runsOf1
         combinations = map (tribonacci !!) lengths
     print $ product combinations
+
+main :: IO ()
+main = do
+    input <- parse parser "" <$> readFile "2020/input/10.txt"
+    case input of 
+        Left error -> putStr (errorBundlePretty error)
+        Right parsed -> solver parsed

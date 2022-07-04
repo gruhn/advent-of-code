@@ -1,4 +1,4 @@
-module Day12 where
+module Main where
 import Text.Parsec.String (Parser, parseFromFile)
 import Text.Parsec ( char, newline, choice, many1, sepBy, digit, letter )
 
@@ -50,9 +50,9 @@ applyMove' (dir, v) move = case move of
 manhattanDist :: Vec -> Int
 manhattanDist = sum . map abs
 
-day12 :: IO ()
-day12 = do
-    input <- parseFromFile (move `sepBy` newline) "input/12.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile (move `sepBy` newline) "2020/input/12.txt"
 
     putStr "Part 1: "
     print $ manhattanDist . snd . 

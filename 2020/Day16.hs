@@ -1,4 +1,4 @@
-module Day16 where
+module Main where
 
 import Text.Parsec
     ( char, digit, newline, noneOf, string, many1, sepBy, many )
@@ -109,6 +109,6 @@ fromEither :: Either a a -> a
 fromEither (Left a) = a
 fromEither (Right a) = a
 
-day16 :: IO ()
-day16 = parseFromFile parser "input/16.txt" 
+main :: IO ()
+main = parseFromFile parser "2020/input/16.txt" 
     >>= fromEither . bimap print solve

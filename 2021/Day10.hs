@@ -1,4 +1,4 @@
-module Day10 where
+module Main where
 
 import Data.List (sort)
 
@@ -20,7 +20,7 @@ middle list =
 
 main :: IO ()
 main = do
-    parsed <- map parseLine . lines <$> readFile "10-input.txt"
+    parsed <- map parseLine . lines <$> readFile "2021/10-input.txt"
     putStr "Part 1: "
     print $ sum . map incorrectCharScore . filter isIncorrect $ parsed
     putStr "Part 2: "

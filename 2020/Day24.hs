@@ -1,10 +1,11 @@
-module Day24 (parser, solver) where
+module Main where
 
-import Text.Megaparsec (Parsec, sepBy, some, choice)
+import Text.Megaparsec (Parsec, sepBy, some, choice, parse, errorBundlePretty)
 import Text.Megaparsec.Char (newline, string)
 import Data.Void (Void)
 import qualified Data.Set as Set
 import Data.Set (Set)
+import Data.Either.Extra (fromEither)
 import Vec
 
 type Tile = Vec2 Int
@@ -54,3 +55,10 @@ solver coords = do
 
     putStr "Part 2: "
     print $ length $ (!! 100) $ iterate convolute blackTiles
+
+main :: IO ()
+main = do
+    input <- parse parser "" <$> readFile "2020/input/24.txt"
+    case input of 
+        Left error -> putStr (errorBundlePretty error)
+        Right parsed -> solver parsed

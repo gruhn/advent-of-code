@@ -1,4 +1,4 @@
-module Day22 where
+module Main where
 import Text.Parsec.String (Parser, parseFromFile)
 import Text.Parsec (string, many1, (<|>), newline, sepBy, char, option, try)
 import Text.Parsec.Char (digit)
@@ -40,9 +40,9 @@ insideInitArea (Cuboid (x0,xn) (y0,yn) (z0,zn)) =
     all (-50 <=) [ x0, y0, z0 ] && 
     all (<= 50) [ xn, yn, zn ]
 
-day22 :: IO ()
-day22 = do
-    instructions <- parseFromFile (cuboidP `sepBy` newline) "22-input.txt"
+main :: IO ()
+main = do
+    instructions <- parseFromFile (cuboidP `sepBy` newline) "2021/22-input.txt"
     let resultVolume = sum . map volume . foldl applyInst []
     putStr "Part 1: "
     print $ resultVolume . filter (insideInitArea . snd) <$> instructions

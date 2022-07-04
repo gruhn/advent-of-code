@@ -1,7 +1,4 @@
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
-
-module Day09 where
+module Main where
 import Data.Array
 import Data.Char (digitToInt)
 import Data.Maybe (mapMaybe)
@@ -20,7 +17,7 @@ parseGrid = listArrayInt . map parseRow . lines
 
 main :: IO ()
 main = do
-    grid <- parseGrid <$> readFile "09-input.txt"
+    grid <- parseGrid <$> readFile "2021/09-input.txt"
     putStr "Part 1: "
     print $ part1 grid
     putStr "Part 2: "

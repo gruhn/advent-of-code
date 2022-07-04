@@ -1,13 +1,13 @@
-module Day06 (day06) where
+module Main where
 import Text.Parsec.String (parseFromFile, Parser)
 import Text.Parsec (sepBy, char, digit, many1)
 
 natP :: Parser Integer
 natP = read <$> many1 digit
 
-day06 :: IO ()
-day06 = do
-    ages <- parseFromFile (natP `sepBy` char ',') "06-input.txt"
+main :: IO ()
+main = do
+    ages <- parseFromFile (natP `sepBy` char ',') "2021/06-input.txt"
     putStr "Part 1: "
     print $ sum . map (descendantCount 80) <$> ages
     putStr "Part 2: "

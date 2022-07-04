@@ -1,4 +1,4 @@
-module Day17 where
+module Main where
 import Data.Foldable (maximumBy)
 import Data.Function (on)
 
@@ -37,8 +37,8 @@ stepsTo xInt vxInt =
     -- solve for n: x = vx + (vx-1) + (vx-2) + ... + (vx-n)
     in ceiling $ 1 + (2*vx -1)/2 - sqrt (vx^2 + vx + 1/2 - 2*x) 
 
-day17 :: IO ()
-day17 = do
+main :: IO ()
+main = do
     let (xClose, xFar, yLow, yHigh) = targetArea
         vxMin = ceiling $ sqrt (fromIntegral (xClose*2) + 1/4) - 1/2
         vxMax = xFar

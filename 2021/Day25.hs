@@ -1,4 +1,4 @@
-module Day23 where
+module Main where
 
 import ParseUtil (Grid(..), gridP)
 import Text.Parsec (char, (<|>))
@@ -24,9 +24,9 @@ show' :: GridWithBounds -> String
 show' (Grid grid, bounds) =
     show . Grid $ Map.insertWith (\_ x -> x) bounds South grid
 
-day23 :: IO ()
-day23 = do
-    input <- parseFromFile (gridP cellP) "23-input.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile (gridP cellP) "2021/25-input.txt"
     let gwb = do  
             (Grid grid) <- input
             return

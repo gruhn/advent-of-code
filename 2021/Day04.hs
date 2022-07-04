@@ -1,7 +1,5 @@
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
 {-# LANGUAGE TupleSections #-}
-module Day04 where 
+module Main where 
 import Data.List (elemIndex, transpose, find, nub, partition, delete)
 import ParseUtil (splitOn)
 
@@ -45,10 +43,10 @@ bingoScore (lastDraw, board) =
 
 main :: IO ()
 main = do
-    input <- readFile "04-input.txt"
+    input <- readFile "2021/04-input.txt"
     let (draws, boards) = parseInput input
     let bingos = bingosInOrder draws boards
-    putStrLn "Part 1:"
+    putStr "Part 1:"
     print $ bingoScore (head bingos)
-    putStrLn "Part 2:"
+    putStr "Part 2:"
     print $ bingoScore (last bingos)

@@ -1,5 +1,4 @@
--- stack runghc --resolver lts-18.18
-module Day11 where
+module Main where
 
 import Data.Char (digitToInt, intToDigit)
 import qualified Data.Map as Map
@@ -10,7 +9,7 @@ parse = fromNestedList . map (map digitToInt) . lines
 
 main :: IO ()
 main = do
-    input <- parse <$> readFile "11-input.txt"
+    input <- parse <$> readFile "2021/11-input.txt"
     putStr "Part 1: "
     print $ sum $ map fst $ take 101 $ iterateStep input
     putStr "Part 2: "

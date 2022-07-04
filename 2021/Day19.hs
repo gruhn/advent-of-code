@@ -1,4 +1,4 @@
-module Day19 ( day19 ) where
+module Main where
 import Text.Parsec.String (Parser, parseFromFile)
 import Text.Parsec (option, digit, many1, sepBy, char, newline, count, endBy, sepBy1, sepEndBy)
 import Text.Parsec.Char (string)
@@ -119,9 +119,9 @@ manhattanDist :: [Int] -> [Int] -> Int
 manhattanDist v w = 
     sum . map abs $ v `subtract` w
 
-day19 :: IO ()
-day19 = do
-    input <- parseFromFile inputP "19-input.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile inputP "2021/19-input.txt"
 
     case input of
         Left err -> print err

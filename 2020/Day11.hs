@@ -1,10 +1,11 @@
-module Day11 (parser, solver) where
+module Main where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Void (Void)
-import Text.Megaparsec (Parsec, sepBy, some, (<|>))
+import Text.Megaparsec (Parsec, sepBy, some, (<|>), parse, errorBundlePretty)
 import Text.Megaparsec.Char (char, newline)
+import Data.Either.Extra (fromEither)
 
 tupleAdd :: (Int,Int) -> (Int,Int) -> (Int,Int)
 tupleAdd (x,y) (x',y') = (x+x',y+y')
@@ -118,3 +119,11 @@ solver grid = do
 
     putStr "Part 2: "
     print $ countOccupied $ converge grid (mapWithStar Floor convPart2)
+
+main :: IO ()
+main = do
+    input <- parse parser "" <$> readFile "2020/input/11.txt"
+
+    case input of 
+        Left error -> putStr (errorBundlePretty error)
+        Right parsed -> solver parsed

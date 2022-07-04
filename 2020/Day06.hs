@@ -1,4 +1,4 @@
-module Day06 (day06) where
+module Main where
 
 import Text.Parsec (letter, many1, newline, sepBy, sepEndBy, endBy, many, choice, manyTill, count, oneOf)
 import Text.Parsec.String (Parser, parseFromFile)
@@ -21,9 +21,9 @@ unions = map Set.unions
 intersections :: [[Set Char]] -> [Set Char]
 intersections = map (foldr1 Set.intersection)
 
-day06 :: IO ()
-day06 = do
-    groups <- parseFromFile groupListP "input/06.txt"
+main :: IO ()
+main = do
+    groups <- parseFromFile groupListP "2020/input/06.txt"
 
     putStr "Part 1: "
     print $ sum . map Set.size . unions <$> groups

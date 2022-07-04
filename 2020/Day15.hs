@@ -1,4 +1,4 @@
-module Day15 (day15) where
+module Main where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -9,8 +9,8 @@ turn i nums prev =
         nums' = Map.insert prev i nums
     in next : (turn (i+1) nums' $! next)
 
-day15 :: IO ()
-day15 = do
+main :: IO ()
+main = do
     let start = [0,20,7,16,1,18,15]
         startMap = Map.fromList $ zip start [1..] 
         result = start ++ turn (length start) startMap (last start)

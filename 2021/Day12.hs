@@ -1,6 +1,4 @@
--- stack runghc --resolver lts-18.18
-
-module Day12 where
+module Main where
 
 import ParseUtil (splitOn)
 import Data.Char (isUpper, isLower)
@@ -27,7 +25,7 @@ parseEdge _     = Nothing
 
 main :: IO ()
 main = do
-    caveSystem <- parse <$> readFile "12-input.txt"
+    caveSystem <- parse <$> readFile "2021/12-input.txt"
     putStr "Part 1: "
     print $ fmap (length . paths1) caveSystem 
     putStr "Part 2: "

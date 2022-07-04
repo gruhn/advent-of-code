@@ -1,8 +1,4 @@
-
-#!/usr/bin/env stack
--- stack --resolver lts-18.18 script
-
-module Day07 where
+module Main where
 import ParseUtil (splitOn)
 
 parseInput :: String -> [Int]
@@ -10,7 +6,7 @@ parseInput = map read . splitOn ","
 
 main :: IO ()
 main = do
-    input <- parseInput <$> readFile "07-input.txt"
+    input <- parseInput <$> readFile "2021/07-input.txt"
     putStr "Part 1: "
     print $ minimize cost1 input
     putStr "Part 2: "

@@ -1,4 +1,4 @@
-module Day18 (day18) where
+module Main where
 import Text.Parsec.String (Parser, parseFromFile)
 import Text.Parsec (string, many1, digit, char, choice, newline, sepBy, (<|>), chainl1, many, parse)
 
@@ -46,9 +46,9 @@ eval (Add l r) = eval l + eval r
 eval (Mul l r) = eval l * eval r
 eval (Parens x) = eval x
 
-day18 :: IO ()
-day18 = do
-    input <- readFile "input/18.txt"
+main :: IO ()
+main = do
+    input <- readFile "2020/input/18.txt"
 
     putStr "Part 1: "
     print $ sum . map eval <$> 

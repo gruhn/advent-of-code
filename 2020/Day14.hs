@@ -1,4 +1,4 @@
-module Day14 where
+module Main where
 
 import qualified Data.Map as Map
 import Data.Map (Map)
@@ -70,9 +70,9 @@ eval2 (memory, mask) (Mem addr val) =
 eval2 (memory, _) (Mask mask) =
     (memory, mask)
 
-day14 :: IO ()
-day14 = do
-    input <- parseFromFile parser "input/14.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile parser "2020/input/14.txt"
 
     putStr "Part 1: "
     let initState = (Map.empty, replicate 36 'X')

@@ -1,4 +1,4 @@
-module Day13 where
+module Main where
 
 import Text.Parsec
 import Text.Parsec.String
@@ -42,11 +42,11 @@ pair = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "13-input.txt"
+    inputRaw <- readFile "2021/13-input.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
     let results = do
-        (dots, ins) <- parsed
-        return (scanl apply dots ins)
+            (dots, ins) <- parsed
+            return (scanl apply dots ins)
 
     putStr "Part 1: "
     print $ length . (!! 1) <$> results

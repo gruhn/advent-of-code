@@ -1,4 +1,4 @@
-module Day21 (day21) where
+module Main where
 
 import Data.MemoTrie (memo3, mup)
 import Data.Tuple (swap)
@@ -48,11 +48,11 @@ winCount p0 p1 s0 s1
 
 winCountMemo = memo4 winCount
 
-day21 :: IO ()
-day21 = do 
+main :: IO ()
+main = do 
     putStr "Part 1: "
     let result = head . dropWhile ((< 1000) . topScore) $ iterate step (0, 1, 5, 0, 0)
         (n, _, _, s1, s2) = result
     print (n*3 * min s1 s2)
-    putStrLn "Part 2: "
+    putStr "Part 2: "
     print $ uncurry max $ winCountMemo 5 1 0 0

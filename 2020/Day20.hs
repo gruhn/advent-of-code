@@ -1,16 +1,14 @@
-module Day20 (parser, solver) where
+module Main where
 
--- import Utils ( natural )
--- import Text.Parsec.String (Parser)
--- import Text.Parsec (string, char, (<|>), many, sepBy, newline, many1, sepEndBy)
 import Data.List (transpose)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.List as List
-import Text.Megaparsec (Parsec, (<|>), some, sepEndBy, sepBy)
+import Text.Megaparsec (Parsec, (<|>), some, sepEndBy, sepBy, parse, errorBundlePretty)
 import Data.Void
 import Text.Megaparsec.Char (string, char, newline)
 import Text.Megaparsec.Char.Lexer (decimal, lexeme)
+import Data.Either.Extra (fromEither)
 
 data Tile = Tile 
     { tileIds :: Int
@@ -92,3 +90,11 @@ solver tiles = do
         $ f 
         $ Map.filter ((==2) . length) 
         $ presort tiles
+
+main :: IO ()
+main = do
+    input <- parse parser "" <$> readFile "2020/input/20.txt"
+
+    case input of 
+        Left error -> putStr (errorBundlePretty error)
+        Right parsed -> solver parsed

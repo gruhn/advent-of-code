@@ -1,4 +1,4 @@
-module Day21 where
+module Main where
 
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -58,9 +58,9 @@ matching graph
 
         in join . find isJust $ Set.map (matchWith a graph') bs
 
-day21 :: IO ()
-day21 = do
-    input <- parseFromFile parser "input/21.txt"
+main :: IO ()
+main = do
+    input <- parseFromFile parser "2020/input/21.txt"
     case input of 
         Left err -> print err
         Right foods -> do

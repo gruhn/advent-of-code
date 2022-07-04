@@ -1,4 +1,4 @@
-module Day16 where
+module Main where
 
 import Text.Parsec
 import Text.Parsec.String 
@@ -86,10 +86,10 @@ compute (_, Operator 7 packets) =
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "16-input.txt"
+    inputRaw <- readFile "2021/16-input.txt"
     let parsed = do 
-        hexParsed <- parse (hexString <* eof) "" inputRaw
-        parse (many (try packet)) "" hexParsed
+            hexParsed <- parse (hexString <* eof) "" inputRaw
+            parse (many (try packet)) "" hexParsed
 
     putStr "Part 1: "
     print $ sum . versions <$> parsed

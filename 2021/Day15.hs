@@ -1,4 +1,4 @@
-module Day15 (day15) where
+module Main where
 
 import Algorithm.Search (dijkstra)
 import Text.Parsec (many1, newline, sepBy)
@@ -7,7 +7,6 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Map as Map
 import Text.Parsec.String (Parser, parseFromFile)
 import Data.Maybe (mapMaybe)
-import ParseUtil (Grid(..), gridP)
 
 type Cave = Grid Int
 
@@ -61,9 +60,9 @@ multiplyCave factor cave =
 
     in Grid $ Map.unions [ shiftCaveBy (x,y) | x <- [0..factor-1], y <- [0..factor-1] ]
 
-day15 :: IO ()
-day15 = do
-    caveEither <- parseFromFile caveP "15-input.txt"
+main :: IO ()
+main = do
+    caveEither <- parseFromFile caveP "2021/15-input.txt"
     putStr "Part 1: "
     print $ search <$> caveEither
     putStr "Part 2: "
