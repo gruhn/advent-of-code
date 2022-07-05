@@ -1,6 +1,6 @@
-{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use head" #-}
+
 module Main where
 
 import Text.Megaparsec (Parsec, sepBy, parse, single, anySingle, count, (<|>), many, parseTest, errorBundlePretty)
@@ -28,73 +28,107 @@ data Op
     | Mul Int Int Int
     | Inp Int
     | Out Int
+    | JIT Int Int
+    | JIF Int Int
+    | Lt Int Int Int
+    | Eq Int Int Int
     | Halt
     deriving Show
+
+-- >>> take 10 $ digits 1234
+-- [4,3,2,1,0,0,0,0,0,0]
 
 digits :: Int -> [Int]
 digits x = x `mod` 10 : digits (x `div` 10)
 
-parseOp :: Int -> Program -> Op
-parseOp i p =
+nextOp :: State -> Op
+nextOp (State _ i p _) =
     let opcode = p Map.! i
-        c = p Map.! (i+1) 
-        b = p Map.! (i+2) 
-        a = p Map.! (i+3) 
-        
-        resolve 0 ref = p Map.! ref
-        resolve 1 val = val
-        resolve _ _ = error "unknown arg mode"
+        arg1 = p Map.! (i+1) 
+        arg2 = p Map.! (i+2) 
+        arg3 = p Map.! (i+3) 
+
+        deref 0 ref = p Map.! ref
+        deref 1 val = val
+        deref _ _ = error "unknown arg mode"
 
         ds = digits opcode
 
         opType = (ds !! 0) + (ds !! 1) * 10
-        argA = resolve (ds !! 2) a
-        argB = resolve (ds !! 3) b
-        argC = resolve (ds !! 4) c
+        mode1 = ds !! 2
+        mode2 = ds !! 3
+        mode3 = ds !! 4
 
         op = case opType of
-            1 -> Add argC argB argA
-            2 -> Mul argC argB argA
-            3 -> Inp argC
-            4 -> Out argC
+            1 -> Add (deref mode1 arg1) (deref mode2 arg2) arg3
+            2 -> Mul (deref mode1 arg1) (deref mode2 arg2) arg3
+            3 -> Inp arg1
+            4 -> Out (deref mode1 arg1)
+            5 -> JIT (deref mode1 arg1) (deref mode2 arg2) 
+            6 -> JIF (deref mode1 arg1) (deref mode2 arg2)
+            7 -> Lt (deref mode1 arg1) (deref mode2 arg2) arg3
+            8 -> Eq (deref mode1 arg1) (deref mode2 arg2) arg3
             99 -> Halt
-            _ -> error "unkown op code"
+            o -> error ("unknown op code: " ++ show o ++ " (pointer: " ++ show i ++ ")")
     in  op
+data State = State 
+    { input :: [Int]
+    , pointer :: Int 
+    , program :: Map.Map Int Int
+    , output :: [Int] 
+    } deriving (Show, Eq)
 
-type State = ([Int], Int, Program, [Int])
+mapInput f s = s { input = f $ input s }
+mapPointer f s = s { pointer = f $ pointer s }
+mapProgram f s = s { program = f $ program s }
+mapOutput f s = s { output = f $ output s }
 
 applyOp :: Op -> State -> State
-applyOp (Add c b a) (inp, i, p, out) = 
-    (inp, i+4, Map.insert a (c+b) p, out)
-applyOp (Mul c b a) (inp, i, p, out) = 
-    (inp, i+4, Map.insert a (c*b) p, out)
-applyOp (Inp c) (inp, i, p, out) = 
-    (tail inp, i+2, Map.insert c (head inp) p, out)
-applyOp (Out c) (inp, i, p, out) =  
-    (inp, i+2, p, c:out)
-applyOp Halt state = state
+applyOp (Add a1 a2 a3) =
+    mapProgram (Map.insert a3 (a1+a2))
+    . mapPointer (+4)
+applyOp (Mul a1 a2 a3) = 
+    mapPointer (+4)
+    . mapProgram (Map.insert a3 (a1*a2))
+applyOp (Inp a1) = \state ->
+    mapPointer (+2)
+    . mapInput tail
+    . mapProgram (Map.insert a1 (head $ input state)) 
+    $ state
+applyOp (Out a1) =
+    mapPointer (+2) 
+    . mapOutput (a1 :)
+applyOp (JIT a1 a2)
+    | 0 < a1    = mapPointer (const a2)
+    | otherwise = mapPointer (+3)
+applyOp (JIF a1 a2)
+    | a1 == 0   = mapPointer (const a2)
+    | otherwise = mapPointer (+3) 
+applyOp (Lt a1 a2 a3) =
+    mapPointer (+4) 
+    . mapProgram (Map.insert a3 (fromEnum $ a1 < a2))
+applyOp (Eq a1 a2 a3) =
+    mapPointer (+4) 
+    . mapProgram (Map.insert a3 (fromEnum $ a1 == a2))
+applyOp Halt = id
 
-step :: ([Int], Int, Program, [Int]) -> ([Int], Int, Program, [Int])
-step state@(inp, i, p, out) = applyOp (parseOp i p) state
+step :: State -> State
+step state = applyOp (nextOp state) state
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a
     | a == f a  = a
     | otherwise = converge f (f a)
 
--- solve :: Program -> IO ()
--- solve program = do
---     putStr "Part 1: "
---     print $ outputOf program (12,2)
---     putStr "Part 2: "
---     let nounVerbPairs = crossProduct [0..99] [0..99]
---         result = find ((==19690720) . outputOf program) nounVerbPairs
---         score (noun, verb) = 100*noun + verb
---     print $ score <$> result
-
 main :: IO ()
 main = do
     input <- parse parser "" <$> readFile "2019/input/05.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
-        Right program -> print $ converge step ([1], 0, program, [])
+        Right program -> do
+            putStr "Part 2: "
+
+            let state0 = State [5] 0 program []
+                stateN = converge step state0
+
+            print $ output stateN
