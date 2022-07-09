@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use head" #-}
 module IntcodeComputer (module IntcodeComputer) where
 
 import Text.Megaparsec (Parsec, sepBy, parse, single, anySingle, count, (<|>), many, parseTest, errorBundlePretty)
@@ -6,102 +8,133 @@ import Text.Megaparsec.Char.Lexer (signed, decimal)
 import Text.Megaparsec.Char (char, space)
 import Data.Functor (($>))
 import qualified Data.Map as Map
+import Lens.Micro (lens, over, set, (^.), Lens')
 
-type Program = Map.Map Int Int
+type Program = Map.Map Integer Integer
+
+programFrom :: [Integer] -> Program
+programFrom = Map.fromList . zip [0..]
 
 parser :: Parsec Void String Program
 parser =
     let signedDecimal = signed space decimal
-        programFrom = Map.fromList . zip [0..]
-    in programFrom <$> signedDecimal `sepBy` char ','
+    in  programFrom <$> signedDecimal `sepBy` char ','
 
 data Op
-    = Add Int Int Int
-    | Mul Int Int Int
-    | Inp Int
-    | Out Int
-    | JIT Int Int
-    | JIF Int Int
-    | Lt Int Int Int
-    | Eq Int Int Int
+    = Add Integer Integer Integer
+    | Mul Integer Integer Integer
+    | Inp Integer
+    | Out Integer
+    | JIT Integer Integer
+    | JIF Integer Integer
+    | Lt Integer Integer Integer
+    | Eq Integer Integer Integer
+    | RelBase Integer
     | Halt
     deriving Show
 
--- >>> take 10 $ digits 1234
--- [4,3,2,1,0,0,0,0,0,0]
+-- >>> take 10 $ digits 213
+-- [3,1,2,0,0,0,0,0,0,0]
 
-digits :: Int -> [Int]
+digits :: Integer -> [Integer]
 digits x = x `mod` 10 : digits (x `div` 10)
 
-nextOp :: State -> Op
-nextOp (State _ i p _) =
-    let opcode = p Map.! i
-        arg1 = p Map.! (i+1) 
-        arg2 = p Map.! (i+2) 
-        arg3 = p Map.! (i+3) 
+getAt :: Program -> Integer -> Integer
+getAt p i = Map.findWithDefault 0 i p
 
-        deref 0 ref = p Map.! ref
+nextOp :: State -> Op
+nextOp (State _ i p _ relBase) =
+    let opcode = getAt p i
+        arg1 = getAt p (i+1) 
+        arg2 = getAt p (i+2) 
+        arg3 = getAt p (i+3) 
+
+        absoluteRef 0 ref = ref
+        absoluteRef 2 ref = ref + relBase
+        absoluteRef _ _   = error "unknown ref mode"
+
+        deref 0 ref = getAt p ref
         deref 1 val = val
+        deref 2 ref = getAt p (ref + relBase)
         deref _ _ = error "unknown arg mode"
 
         ds = digits opcode
-
         opType = (ds !! 0) + (ds !! 1) * 10
         mode1 = ds !! 2
         mode2 = ds !! 3
         mode3 = ds !! 4
 
         op = case opType of
-            1 -> Add (deref mode1 arg1) (deref mode2 arg2) arg3
-            2 -> Mul (deref mode1 arg1) (deref mode2 arg2) arg3
-            3 -> Inp arg1
+            1 -> Add (deref mode1 arg1) (deref mode2 arg2) (absoluteRef mode3 arg3)
+            2 -> Mul (deref mode1 arg1) (deref mode2 arg2) (absoluteRef mode3 arg3)
+            3 -> Inp (absoluteRef mode1 arg1)
             4 -> Out (deref mode1 arg1)
             5 -> JIT (deref mode1 arg1) (deref mode2 arg2) 
             6 -> JIF (deref mode1 arg1) (deref mode2 arg2)
-            7 -> Lt (deref mode1 arg1) (deref mode2 arg2) arg3
-            8 -> Eq (deref mode1 arg1) (deref mode2 arg2) arg3
+            7 -> Lt (deref mode1 arg1) (deref mode2 arg2) (absoluteRef mode3 arg3)
+            8 -> Eq (deref mode1 arg1) (deref mode2 arg2) (absoluteRef mode3 arg3)
+            9 -> RelBase (deref mode1 arg1)
             99 -> Halt
-            o -> error ("unknown op code: " ++ show o ++ " (pointer: " ++ show i ++ ")")
+            code -> error ("unknown op code: " ++ show code ++ " (pointer: " ++ show i ++ ")")
+
     in  op
+
 data State = State 
-    { input :: [Int]
-    , pointer :: Int 
-    , program :: Map.Map Int Int
-    , output :: [Int] 
+    { _input :: [Integer]
+    , _pointer :: Integer 
+    , _program :: Map.Map Integer Integer
+    , _output :: [Integer] 
+    , _relativeBase :: Integer
     } deriving (Show, Eq)
 
-mapInput f s = s { input = f $ input s }
-mapPointer f s = s { pointer = f $ pointer s }
-mapProgram f s = s { program = f $ program s }
-mapOutput f s = s { output = f $ output s }
+input :: Lens' State [Integer]
+input = lens _input (\state inp -> state { _input = inp })
+
+pointer :: Lens' State Integer
+pointer = lens _pointer (\state p -> state { _pointer = p })
+
+program :: Lens' State Program
+program = lens _program (\state p -> state { _program = p })
+
+output :: Lens' State [Integer]
+output = lens _output (\state out -> state { _output = out })
+
+relativeBase :: Lens' State Integer
+relativeBase = lens _relativeBase (\state rb -> state { _relativeBase = rb })
+
+initialState :: Program -> [Integer] -> State
+initialState program input = 
+    State input 0 program [] 0
+
+-- >>> over pointer (+3) $ initialState Map.empty [1,2,3] 
+-- State {_input = [1,2,3], _pointer = 3, _program = fromList [], _output = [], _relativeBase = 0}
+
+boolToInt :: Bool -> Integer
+boolToInt True = 1
+boolToInt False = 0
 
 applyOp :: Op -> State -> State
 applyOp (Add a1 a2 a3) =
-    mapProgram (Map.insert a3 (a1+a2))
-    . mapPointer (+4)
+    over pointer (+4) . over program (Map.insert a3 (a1+a2)) 
 applyOp (Mul a1 a2 a3) = 
-    mapPointer (+4)
-    . mapProgram (Map.insert a3 (a1*a2))
+    over pointer (+4) . over program (Map.insert a3 (a1*a2))
 applyOp (Inp a1) = \state ->
-    mapPointer (+2)
-    . mapInput tail
-    . mapProgram (Map.insert a1 (head $ input state)) 
+    over pointer (+2) . over input tail . over program (Map.insert a1 (head $ state ^. input)) 
     $ state
 applyOp (Out a1) =
-    mapPointer (+2) 
-    . mapOutput (a1 :)
+    over pointer (+2) . over output (a1 :)
 applyOp (JIT a1 a2)
-    | 0 < a1    = mapPointer (const a2)
-    | otherwise = mapPointer (+3)
+    | 0 < a1    = set pointer a2
+    | otherwise = over pointer (+3)
 applyOp (JIF a1 a2)
-    | a1 == 0   = mapPointer (const a2)
-    | otherwise = mapPointer (+3) 
+    | a1 == 0   = set pointer a2
+    | otherwise = over pointer (+3) 
 applyOp (Lt a1 a2 a3) =
-    mapPointer (+4) 
-    . mapProgram (Map.insert a3 (fromEnum $ a1 < a2))
+    over pointer (+4) . over program (Map.insert a3 (boolToInt $ a1 < a2))
 applyOp (Eq a1 a2 a3) =
-    mapPointer (+4) 
-    . mapProgram (Map.insert a3 (fromEnum $ a1 == a2))
+    over pointer (+4) . over program (Map.insert a3 (boolToInt $ a1 == a2))
+applyOp (RelBase a1) =
+    over pointer (+2) . over relativeBase (+a1)
 applyOp Halt = id
 
 step :: State -> State
@@ -112,8 +145,8 @@ converge f a
     | a == f a  = a
     | otherwise = converge f (f a)
 
-run :: Program -> [Int] -> Int
+run :: Program -> [Integer] -> [Integer]
 run program input =
-    let state0 = State input 0 program []
+    let state0 = initialState program input 
         stateN = converge step state0
-    in  head $ output stateN
+    in  stateN ^. output

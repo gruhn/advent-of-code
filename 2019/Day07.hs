@@ -1,17 +1,18 @@
 module Main where
-
 import Text.Megaparsec (parse, errorBundlePretty)
 import Data.List (permutations)
 import Data.Function (on)
 import Data.Foldable (maximumBy, Foldable (foldl'))
 import Data.Traversable (mapAccumL)
+import Lens.Micro (over, set)
+import Lens.Micro.Extras (view)
 
 import IntcodeComputer
 
 isInputDepleted :: State -> Bool
 isInputDepleted state =
     case nextOp state of
-        Inp _ -> null (input state)
+        Inp _ -> null (view input state)
         _     -> False
 
 depletInput :: State -> State
@@ -20,25 +21,21 @@ depletInput s
     | step s == s       = s
     | otherwise         = depletInput (step s)
 
-appendInput :: [Int] -> State -> State
-appendInput newInput s = 
-    s { input = input s <> newInput }
+accumOutput :: [Integer] -> State -> ([Integer], State)
+accumOutput newInput state0 =
+    let state1 = depletInput $ over input (<> newInput) state0
+    in  (view output state1, set output [] state1)
 
-accumOutput :: [Int] -> State -> ([Int], State)
-accumOutput input state0 =
-    let state1 = depletInput $ appendInput input state0
-    in  (output state1, state1 { output = [] })
-
-feedbackStep :: ([Int], [State]) -> ([Int], [State])
+feedbackStep :: ([Integer], [State]) -> ([Integer], [State])
 feedbackStep = uncurry (mapAccumL accumOutput)
 
-initialState :: Program -> Int -> State
-initialState program phase = State [phase] 0 program []
+initialState' :: Program -> Integer -> State
+initialState' program phase = initialState program [phase]
 
-feedbackLoop :: Program -> [Int] -> Int
+feedbackLoop :: Program -> [Integer] -> Integer
 feedbackLoop program phaseSetting =
-    let amplifiers = fmap (initialState program) phaseSetting
-        finalOutput = head . input . head . snd
+    let amplifiers = fmap (initialState' program) phaseSetting
+        finalOutput = head . view input . head . snd
     in  finalOutput $ converge feedbackStep ([0], amplifiers)
 
 main :: IO ()
