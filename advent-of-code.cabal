@@ -61,6 +61,15 @@ executable day08-2019
     hs-source-dirs:   2019
     default-language: Haskell2010
 
+executable day09-2019
+    main-is:          Day09.hs
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+                    , containers
+    hs-source-dirs:   2019
+    default-language: Haskell2010
+    other-modules:    IntcodeComputer
+
 executable day06-2020
     main-is:          Day06.hs
     build-depends:    base ^>=4.14.3.0

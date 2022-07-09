@@ -1,5 +1,4 @@
 module Main where
-
 import Text.Megaparsec (parse, errorBundlePretty)
 import Data.List (permutations)
 import Data.Function (on)
@@ -20,24 +19,24 @@ depletInput s
     | step s == s       = s
     | otherwise         = depletInput (step s)
 
-appendInput :: [Int] -> State -> State
+appendInput :: [Integer] -> State -> State
 appendInput newInput s = 
     s { input = input s <> newInput }
 
-accumOutput :: [Int] -> State -> ([Int], State)
+accumOutput :: [Integer] -> State -> ([Integer], State)
 accumOutput input state0 =
     let state1 = depletInput $ appendInput input state0
     in  (output state1, state1 { output = [] })
 
-feedbackStep :: ([Int], [State]) -> ([Int], [State])
+feedbackStep :: ([Integer], [State]) -> ([Integer], [State])
 feedbackStep = uncurry (mapAccumL accumOutput)
 
-initialState :: Program -> Int -> State
-initialState program phase = State [phase] 0 program []
+initialState' :: Program -> Integer -> State
+initialState' program phase = initialState program [phase]
 
-feedbackLoop :: Program -> [Int] -> Int
+feedbackLoop :: Program -> [Integer] -> Integer
 feedbackLoop program phaseSetting =
-    let amplifiers = fmap (initialState program) phaseSetting
+    let amplifiers = fmap (initialState' program) phaseSetting
         finalOutput = head . input . head . snd
     in  finalOutput $ converge feedbackStep ([0], amplifiers)
 
