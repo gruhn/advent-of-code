@@ -5,7 +5,7 @@ import Text.Megaparsec (errorBundlePretty, parse)
 import Lens.Micro.Extras (view)
 
 {-
-    
+
 >>> testP1 = programFrom [109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99]
 >>> run testP1 []
 [99,0,101,1006,101,16,100,1008,100,1,100,1001,-1,204,1,109]
