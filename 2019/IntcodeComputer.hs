@@ -150,3 +150,21 @@ run program input =
     let state0 = initialState program input 
         stateN = converge step state0
     in  stateN ^. output
+
+hasHalted :: State -> Bool
+hasHalted state = 
+    case nextOp state of
+        Halt -> True
+        _    -> False
+
+isInputDepleted :: State -> Bool
+isInputDepleted state =
+    case nextOp state of
+        Inp _ -> null (state ^. input)
+        _     -> False
+
+depletInput :: State -> State
+depletInput s
+    | isInputDepleted s = s
+    | hasHalted s       = s
+    | otherwise         = depletInput (step s)

@@ -9,18 +9,6 @@ import Lens.Micro.Extras (view)
 
 import IntcodeComputer
 
-isInputDepleted :: State -> Bool
-isInputDepleted state =
-    case nextOp state of
-        Inp _ -> null (view input state)
-        _     -> False
-
-depletInput :: State -> State
-depletInput s
-    | isInputDepleted s = s
-    | step s == s       = s
-    | otherwise         = depletInput (step s)
-
 accumOutput :: [Integer] -> State -> ([Integer], State)
 accumOutput newInput state0 =
     let state1 = depletInput $ over input (<> newInput) state0
