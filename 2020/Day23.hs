@@ -2,57 +2,53 @@ module Main where
 
 import Data.Function ((&))
 import Data.Foldable (for_)
-import qualified Data.Vector.Mutable as V
-import qualified Data.List as List
+import qualified Data.Vector as V
+import Data.Vector (Vector)
+import Data.List ((\\))
+import Data.Functor ((<&>))
 
-type State n = (Int, V.MVector n Int)
+type State = (Int, Vector Int)
 
-successors :: PrimState m => State n -> m [Int]
-successors (i, cups) = do
-    succ <- V.read cups i
-    succs <- successors (succ, cups)
-    return (succ : succs)
+successors :: State -> [Int]
+successors (i, cups) = 
+    let succ = cups V.! i
+    in  succ : successors (succ, cups)
 
-destinations :: State n -> [Int]
+destinations :: State -> [Int]
 destinations (i, cups) =
-    let dest = (i-1) `mod` length cups
+    let dest = (i-1) `mod` V.length cups
     in  dest : destinations (dest, cups)
 
-insertAfter :: State n -> [Int] -> V.MVector n Int
-insertAfter (dest, cups) picked = do
-    destSucc <- V.read cups dest
-    V.write cups dest (head picked)
-    V.write cups (last picked) destSucc
+move :: State -> State
+move state@(i0, cups) = 
+    let [i1,i2,i3,i4] = take 4 (successors state)
 
-move :: State n -> State n
-move state@(i, cups) = do
-    picked <- take 3 <$> successors state 
-    let dest = head (destinations state List.\\ picked)
+        dest = head (destinations state \\ [i1,i2,i3])
+        destSucc = cups V.! dest
 
-    cups' <- insertAfter (dest, cups) picked
-    lastSucc <- V.read cups' (last picked)
-    cups'' <- V.write cups' i lastSucc
-    i' <- head <$> successors (i, cups'')
+        -- FROM: ... i0 i1 i2 i3 i4 ... dest destSucc ...
+        -- TO  : ... i0 i4 ... dest i1 i2 i3 destSucc ...
 
-    (i', cups'')
+        cups' = cups V.// [ (i0,i4), (dest,i1), (i3,destSucc) ]
 
-initState :: [Int] -> State n
-initState xs = 
+    in  (i4, cups')
+
+initState :: [Int] -> State
+initState xs =
     let -- convert to 0-based indices
         xs' = fmap (\x -> x - 1) xs
         successorOf i = (!! 1) $ dropWhile (/= i) (cycle xs')
-        state = V.generate (length xs') successorOf
-    in  (head xs', state)
+        cups = V.generate (length xs') successorOf
+    in  (head xs', cups)
 
 fromDigits :: [Int] -> Int
 fromDigits [] = 0
 fromDigits (d:ds) =
     d * 10^length ds + fromDigits ds
 
-resolveState :: State n -> [Int]
-resolveState (_, cups) = (0, cups)
-    & successors
-    & take (length cups - 1)
+resolveState :: State -> [Int]
+resolveState (_, cups) = successors (0, cups)
+    & take (V.length cups - 1)
     -- convert back to 1-based indices
     & fmap (+1)
 
