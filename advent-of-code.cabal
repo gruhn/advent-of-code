@@ -194,8 +194,7 @@ executable day22-2020
 executable day23-2020
     main-is:          Day23.hs
     build-depends:    base ^>=4.14.3.0
-                    , containers
-                    , pointedlist
+                    , vector
     hs-source-dirs:   2020
     default-language: Haskell2010
 

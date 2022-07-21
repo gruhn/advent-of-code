@@ -1,45 +1,72 @@
 module Main where
 
 import Data.Function ((&))
-import Data.List.PointedList.Circular (PointedList(PointedList), fromList, previous, next, deleteRight, insertRight, find)
-import Data.List ((\\))
-import Data.Maybe (fromMaybe, fromJust)
 import Data.Foldable (for_)
+import qualified Data.Vector.Mutable as V
+import qualified Data.List as List
 
-takeNext :: Int -> PointedList a -> [a]
-takeNext 0 pl = []
-takeNext n pl@(PointedList _ c _) = 
-    c : takeNext (n-1) (next pl)
+type State n = (Int, V.MVector n Int)
 
-dropNext :: Int -> PointedList a -> PointedList a
-dropNext 0 pl = pl
-dropNext n pl =
-    case deleteRight pl of
-        Just pl' -> dropNext (n-1) pl'
-        Nothing  -> pl
+successors :: PrimState m => State n -> m [Int]
+successors (i, cups) = do
+    succ <- V.read cups i
+    succs <- successors (succ, cups)
+    return (succ : succs)
 
-insertAfter :: Eq a => a -> [a] -> PointedList a -> PointedList a
-insertAfter a as pl =
-    let insertAll pl = foldl (flip insertRight) pl as
-    in  insertAll <$> find a pl
+destinations :: State n -> [Int]
+destinations (i, cups) =
+    let dest = (i-1) `mod` length cups
+    in  dest : destinations (dest, cups)
 
--- >>> dest 3 & take 10
--- [2,1,9,8,7,6,5,4,3,2]
+insertAfter :: State n -> [Int] -> V.MVector n Int
+insertAfter (dest, cups) picked = do
+    destSucc <- V.read cups dest
+    V.write cups dest (head picked)
+    V.write cups (last picked) destSucc
 
-dest :: Int -> [Int]
-dest c = [1..9]
-    & reverse 
-    & cycle
-    & dropWhile (/= c)
-    & tail
+move :: State n -> State n
+move state@(i, cups) = do
+    picked <- take 3 <$> successors state 
+    let dest = head (destinations state List.\\ picked)
 
-move :: PointedList Int -> PointedList Int
-move pl@(PointedList _ c _) =
-    let picked = takeNext 3 pl
-        dest' = head (dest c \\ picked)
-    in  pl & dropNext 3 & insertAfter dest' picked & next
+    cups' <- insertAfter (dest, cups) picked
+    lastSucc <- V.read cups' (last picked)
+    cups'' <- V.write cups' i lastSucc
+    i' <- head <$> successors (i, cups'')
+
+    (i', cups'')
+
+initState :: [Int] -> State n
+initState xs = 
+    let -- convert to 0-based indices
+        xs' = fmap (\x -> x - 1) xs
+        successorOf i = (!! 1) $ dropWhile (/= i) (cycle xs')
+        state = V.generate (length xs') successorOf
+    in  (head xs', state)
+
+fromDigits :: [Int] -> Int
+fromDigits [] = 0
+fromDigits (d:ds) =
+    d * 10^length ds + fromDigits ds
+
+resolveState :: State n -> [Int]
+resolveState (_, cups) = (0, cups)
+    & successors
+    & take (length cups - 1)
+    -- convert back to 1-based indices
+    & fmap (+1)
 
 main :: IO ()
 main = do 
-    let input = fromJust $ fromList [3,8,9,1,2,5,4,6,7]
-    for_ (iterate move input & take 100) print
+    let input = [3,8,9,1,2,5,4,6,7]
+                -- [3,2,6,5,1,9,4,7,8]
+
+    putStr "Part 1: "
+    let startState1 = initState input
+        finalState1 = iterate move startState1 !! 100
+    print (finalState1 & resolveState & fromDigits)
+
+    -- putStr "Part 2: "
+    -- let startState2 = initState (input ++ [10 .. 10^6])
+    --     finalState2 = iterate move startState2 !! (10^3)
+    -- print (finalState2 & resolveState & take 2)
