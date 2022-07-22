@@ -4,12 +4,23 @@ version:            0.1.0.0
 author:             Niklas Gruhn
 maintainer:         niklas@gruhn.me
 
+-- 2015
+
 executable day01-2015
     main-is:          Day01.hs
     build-depends:    base ^>=4.14.3.0
                     , megaparsec
     hs-source-dirs:   2015
     default-language: Haskell2010
+
+executable day02-2015
+    main-is:          Day02.hs
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+    hs-source-dirs:   2015
+    default-language: Haskell2010
+
+-- 2019
 
 executable day01-2019
     main-is:          Day01.hs
@@ -97,6 +108,8 @@ executable day11-2019
     hs-source-dirs:   2019
     default-language: Haskell2010
     other-modules:    IntcodeComputer
+
+-- 2020
 
 executable day06-2020
     main-is:          Day06.hs
@@ -214,6 +227,8 @@ executable day24-2020
     hs-source-dirs:   2020
     default-language: Haskell2010
     other-modules:    Vec
+
+-- 2021
 
 executable day04-2021
     main-is:          Day04.hs
