@@ -42,6 +42,13 @@ executable day05-2015
                     , megaparsec
     hs-source-dirs:   2015
 
+executable day06-2015
+    main-is:          Day06.hs
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+                    , containers
+    hs-source-dirs:   2015
+
 -- 2019
 
 executable day01-2019
