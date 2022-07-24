@@ -36,6 +36,12 @@ executable day04-2015
                     , bytestring
     hs-source-dirs:   2015
 
+executable day05-2015
+    main-is:          Day05.hs
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+    hs-source-dirs:   2015
+
 -- 2019
 
 executable day01-2019
