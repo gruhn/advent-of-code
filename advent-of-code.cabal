@@ -128,6 +128,12 @@ executable day19-2015
     hs-source-dirs:   2015
     default-language: Haskell2010
 
+executable day20-2015
+    main-is:          Day20.hs
+    build-depends:    base ^>=4.14.3.0
+                    , containers
+    hs-source-dirs:   2015
+    default-language: Haskell2010
 
 -- 2019
 
