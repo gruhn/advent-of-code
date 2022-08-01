@@ -42,13 +42,11 @@ var :: String -> Int -> String
 var name index =
     name ++ show index
 
-goalPart1 :: Goal
-goalPart1 = do 
+variables :: Symbolic [SBool]
+variables = do
     ws <- mapM sBool $ var "weapon" <$> [1..length weapons]
     as <- mapM sBool $ var "armor"  <$> [1..length armors]
     rs <- mapM sBool $ var "ring"   <$> [1..length rings]
-
-    let vars = ws ++ as ++ rs
 
     -- pick exactly one weapon
     constrain $ ws `pbExactly` 1
@@ -56,6 +54,12 @@ goalPart1 = do
     constrain $ as `pbAtMost` 1
     -- pick at most two rings
     constrain $ rs `pbAtMost` 2
+
+    return (ws ++ as ++ rs)
+
+goalPart1 :: Goal
+goalPart1 = do 
+    vars <- variables
 
     let bossHitPoints = 103
         bossDamage = 9
@@ -77,18 +81,7 @@ goalPart1 = do
 
 goalPart2 :: Goal
 goalPart2 = do 
-    ws <- mapM sBool $ var "weapon" <$> [1..length weapons]
-    as <- mapM sBool $ var "armor"  <$> [1..length armors]
-    rs <- mapM sBool $ var "ring"   <$> [1..length rings]
-
-    let vars = ws ++ as ++ rs
-
-    -- pick exactly one weapon
-    constrain $ ws `pbExactly` 1
-    -- pick at most one armor
-    constrain $ as `pbAtMost` 1
-    -- pick at most two rings
-    constrain $ rs `pbAtMost` 2
+    vars <- variables
 
     let bossHitPoints = 103
         bossDamage = 9
@@ -107,7 +100,6 @@ goalPart2 = do
              .> bossHitPoints * myDamage   + myHitPoints * myArmor
 
     maximize "goal" totalCost
-
 
 main :: IO ()
 main = do
