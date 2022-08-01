@@ -74,6 +74,13 @@ executable day10-2015
     hs-source-dirs:   2015
     default-language: Haskell2010
 
+executable day11-2015
+    main-is:          Day11.hs
+    build-depends:    base ^>=4.14.3.0
+                    , sbv
+    hs-source-dirs:   2015
+    default-language: Haskell2010
+
 executable day13-2015
     main-is:          Day13.hs
     build-depends:    base ^>=4.14.3.0
@@ -139,6 +146,14 @@ executable day21-2015
     main-is:          Day21.hs
     build-depends:    base ^>=4.14.3.0
                     , sbv
+    hs-source-dirs:   2015
+    default-language: Haskell2010
+
+executable day22-2015
+    main-is:          Day22.hs
+    build-depends:    base ^>=4.14.3.0
+                    , sbv
+                    , microlens
     hs-source-dirs:   2015
     default-language: Haskell2010
 
