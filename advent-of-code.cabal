@@ -152,7 +152,6 @@ executable day21-2015
 executable day22-2015
     main-is:          Day22.hs
     build-depends:    base ^>=4.14.3.0
-                    , sbv
                     , microlens
                     , containers
     hs-source-dirs:   2015
