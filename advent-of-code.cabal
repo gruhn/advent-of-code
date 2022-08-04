@@ -157,6 +157,14 @@ executable day22-2015
     hs-source-dirs:   2015
     default-language: Haskell2010
 
+executable day23-2015
+    main-is:          Day23.hs
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+                    , containers
+    hs-source-dirs:   2015
+    default-language: Haskell2010
+
 executable day25-2015
     main-is:          Day25.hs
     build-depends:    base ^>=4.14.3.0
