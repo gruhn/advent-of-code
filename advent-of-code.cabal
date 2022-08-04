@@ -157,6 +157,12 @@ executable day22-2015
     hs-source-dirs:   2015
     default-language: Haskell2010
 
+executable day25-2015
+    main-is:          Day25.hs
+    build-depends:    base ^>=4.14.3.0
+    hs-source-dirs:   2015
+    default-language: Haskell2010
+
 -- 2019
 
 executable day01-2019
