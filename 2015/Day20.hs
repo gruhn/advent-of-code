@@ -38,9 +38,9 @@ divisors n = primeFactors n
 
 presents :: Int -> Int
 presents n =
-    divisors n & sum & (*10)
+    divisors n & sum 
 
 main :: IO ()
 main = do
     putStr "Part 1: "
-    print $ [1..] & find ((34000000 <=) . presents)
+    print $ [1..] & find ((3400000 <=) . presents)
