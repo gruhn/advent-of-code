@@ -1,31 +1,53 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 module Main where
-import Data.SBV (Goal, sChar_, SChar, SString, EqSymbolic (sNotElem), constrain, OrdSymbolic ((.<)), sChars, sString, SymVal (literal), minimize, Metric (toMetricSpace, fromMetricSpace), SInteger)
-import Data.Functor ((<&>))
-import Data.String (fromString)
-import qualified Data.SBV.Char as SChar
+import Data.Tree (Forest, unfoldForest, Tree (Node))
+import Data.List ((\\))
+import Data.Function ( (&) )
+import Data.Char ( ord )
 
--- instance Metric String where
---     toMetricSpace str = undefined 
---     fromMetricSpace str = undefined 
+-- >>> ['a' .. 'z'] \\ "iol"
+-- "abcdefghjkmnpqrstuvwxyz"
 
-goal :: String -> Goal
-goal oldPass = do
-    nextPass <- sString "password"
+passwordSpace :: Forest Char
+passwordSpace =
+    let alphabet = ['a' .. 'z'] \\ "iol"
 
-    -- passwords may not contain the letters i, o, or l
-    constrain $ literal 'i' `SChar.notElem` nextPass
-    constrain $ literal 'l' `SChar.notElem` nextPass
-    constrain $ literal 'o' `SChar.notElem` nextPass
+        constrainDepth :: Int -> Forest Char -> Forest Char
+        constrainDepth 0 _  = []
+        constrainDepth _ [] = []
+        constrainDepth d (Node c children : siblings) = 
+            Node c (constrainDepth (d-1) children) : constrainDepth d siblings
 
-    -- new password must "come after" old password
-    constrain $ literal oldPass .< nextPass
+        isStraight :: String -> Bool
+        isStraight [] = True
+        isStraight [c] = True
+        isStraight (c1:c2:cs) = 
+            ord c1 + 1 == ord c2 && isStraight (c2:cs)
 
-    -- passwords must include one increasing straight of at least three letters
+        constrainStraight :: String -> Forest Char -> Forest Char
+        constrainStraight str forest
+            | isStraight str = forest
+            | otherwise =
+                let go (Node c children) = Node c $
+                        constrainStraight (tail str ++ [c]) children
+                in  go <$> forest
 
-    -- passwords must contain at least two different, non-overlapping pairs
-    
-    -- minimize "goal" nextPass
+        -- constrainPairs :: Forest Char -> Forest Char
+
+        space = unfoldForest (,alphabet) alphabet
+            & constrainDepth 8
+            & constrainStraight "___"
+
+    in  space
+
+-- >>> passwords passwordSpace & drop 200 & take 10
+-- ["jt","ju","jv","jw","jx","jy","jz","ka","kb","kc"]
+
+passwords :: Forest Char -> [String]
+passwords [] = [""]
+passwords nodes =
+    let go (Node c children) = (c:) <$> passwords children
+    in  concatMap go nodes
 
 main :: IO ()
 main = do
