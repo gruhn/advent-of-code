@@ -29,13 +29,6 @@ combinations [] = [[]]
 combinations (a:as) =
     combinations as ++ ((a:) <$> combinations as)
 
-divisors :: Int -> [Int]
-divisors n = primeFactors n
-    & combinations
-    & fmap product
-    & Set.fromList
-    & Set.toList
-
 presents1 :: Int -> Int
 presents1 n = primeFactors n 
     & combinations
@@ -57,6 +50,6 @@ presents2 n = primeFactors n
 main :: IO ()
 main = do
     putStr "Part 1: "
-    print $ [1..] & find (((34000000 `div` 10) <=) . presents1)
+    print $ [1..] & find (((34000000/10) <=) . fromIntegral . presents1)
     putStr "Part 2: "
     print $ [1..] & find (((34000000/11) <=) . fromIntegral . presents2)
