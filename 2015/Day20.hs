@@ -2,7 +2,7 @@ module Main where
 import Data.Function ((&))
 import Data.Foldable (find)
 import Data.Maybe (fromJust)
-import qualified Data.Set as Set
+import qualified Data.IntSet as Set
 
 primes :: [Int]
 primes = 2 : filter isPrime [3..]
@@ -27,7 +27,7 @@ primeFactors = go primes where
 combinations :: [a] -> [[a]]
 combinations [] = [[]]
 combinations (a:as) =
-    ((a:) <$> combinations as) ++ combinations as
+    combinations as ++ ((a:) <$> combinations as)
 
 divisors :: Int -> [Int]
 divisors n = primeFactors n
@@ -36,11 +36,27 @@ divisors n = primeFactors n
     & Set.fromList
     & Set.toList
 
-presents :: Int -> Int
-presents n =
-    divisors n & sum 
+presents1 :: Int -> Int
+presents1 n = primeFactors n 
+    & combinations
+    & fmap product
+    & Set.fromList
+    & Set.toList
+    & sum 
+
+presents2 :: Int -> Int
+presents2 n = primeFactors n
+    & combinations
+    & fmap product
+    & filter (<=50)
+    & Set.fromList
+    & Set.toList
+    & fmap (n `div`)
+    & sum
 
 main :: IO ()
 main = do
     putStr "Part 1: "
-    print $ [1..] & find ((3400000 <=) . presents)
+    print $ [1..] & find (((34000000 `div` 10) <=) . presents1)
+    putStr "Part 2: "
+    print $ [1..] & find (((34000000/11) <=) . fromIntegral . presents2)
