@@ -1,5 +1,5 @@
 module Main where
-import Text.Megaparsec (Parsec, some, sepBy, parse, errorBundlePretty, sepEndBy)
+import Text.Megaparsec (Parsec, some, sepBy, parse, errorBundlePretty, sepEndBy, choice, manyTill, MonadParsec (eof, try), someTill, (<?>), takeRest, option, anySingle)
 import Data.Void (Void)
 import Text.Megaparsec.Char (hspace, letterChar, string, newline)
 import Data.List (stripPrefix, mapAccumR)
@@ -7,12 +7,16 @@ import qualified Data.Set as Set
 import Data.Tree (Tree (Node, rootLabel), unfoldTree, drawTree)
 import Data.Function ((&))
 import Data.Maybe (mapMaybe)
-import Control.Applicative (Applicative(liftA2))
+import Control.Applicative (Applicative(liftA2), Alternative ((<|>), many))
 import Data.Tuple (swap)
+import Control.Monad (void)
+
+distinct :: Ord a => [a] -> [a]
+distinct = Set.toList . Set.fromList
 
 type Parser = Parsec Void String
 
-type Rule = (String,String)
+type Rule = (String, String)
 
 parser :: Parser ([Rule], String)
 parser =
@@ -43,9 +47,6 @@ replacementsWith (match,replace) (c:cs) =
 replacements :: [Rule] -> String -> [String]
 replacements rules molecule =
     concatMap (`replacementsWith` molecule) rules
-
-distinct :: [String] -> [String]
-distinct = Set.toList . Set.fromList
 
 replacementTree :: [Rule] -> String -> Tree String
 replacementTree rules = 
@@ -93,6 +94,28 @@ shortestPath rules start end =
                 in  foldr minJust Nothing children
 
     in  go 0 searchSpace
+
+splitOnAny :: [String] -> String -> [String]
+splitOnAny splitStrings str =
+    let match  = choice (string <$> splitStrings)
+        filler = anySingle `manyTill` match
+
+        substrs :: Parser [String]
+        substrs = do
+            init <- many (try (match <|> filler))
+            rest <- takeRest
+            case rest of
+                [] -> return init
+                rs -> return (init ++ [rs])
+
+    in  case parse substrs "" str of
+            Left err -> error (errorBundlePretty err)
+            Right result -> result
+
+rewriteTree :: [Rule] -> String -> Tree String
+rewriteTree rules start =
+    let s = splitOnAny (distinct $ fst <$> rules)
+    in  Node start []
 
 main :: IO ()
 main = do
