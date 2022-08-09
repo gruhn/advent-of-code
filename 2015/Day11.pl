@@ -1,7 +1,6 @@
 :- use_module(library(clpz)).
-:- use_module(library(lists), [length/2, maplist/2, maplist/3, same_length/2, reverse/2]).
+:- use_module(library(lists)).
 :- use_module(library(dcgs)).
-:- use_module(library(dif)).
 
 not_ins(_, []).
 not_ins(Xs, [Y|Ys]) :-
@@ -20,9 +19,6 @@ straight([_]).
 straight([C1,C2|Cs]) :-
     C1 #= C2 + 1,
     straight([C2|Cs]).
-
-list_infix(List, Infix) :-
-    phrase((...,seq(Infix),...), List).
 
 after([C|Cs], [C|Ds]) :- 
     same_length(Cs, Ds), 
@@ -47,13 +43,11 @@ password(OldCodes, Codes) :-
 
     % passwords must include one increasing straight of at least three letters
     length(Straight, 3),
-    list_infix(Codes1, Straight),
     straight(Straight),
+    phrase((...,seq(Straight),...), Codes1),
 
     % passwords must contain at least two different, non-overlapping pairs
-    X #\= Y,
-    list_infix(Codes1, [X,X]),
-    list_infix(Codes1, [Y,Y]).
+    phrase((...,seq([X,X]),...,seq([Y,Y]),...), Codes).
 
 wrap_min(X, min(X)).
 
@@ -61,10 +55,33 @@ solution(NextPassword) :-
     chars_codes("vzbxkghb", OldCodes),
     password(OldCodes, NextCodes),
 
-    % chars_codes("vzbxyyaa", MaxCodes),
-    % after(NextCodes, MaxCodes),
+    % FIXME: expected output is
+    %
+    %  ?- solution(Next).
+    %  ;  Next = "vzbxxyzz"
+    %  ;  Next = "vzcaabcc"
+    %  ;  ...
+    %
+    % but we get 
+    %
+    %  ?- solution(Next).
+    %  ;  Next = "vzbxxyzz"
+    %  ;  Next = "vzzaaabc"
+    %  ;  Next = "vzzaabcd" 
+    %  ;  ...
+    %
+    % i.e. the enumeration jumps over some smaller
+    % values. By manually constraining the result
+    % with upper bounds we can find find the smallest 
+    % successor and prove that it's the smallest but
+    % would be nicer to make fix this.
+
+    chars_codes("vzzaaabc", UpperBound1),
+    after(NextCodes, UpperBound1),
+
+    chars_codes("vzccaabc", UpperBound2),
+    after(NextCodes, UpperBound2),
 
     maplist(wrap_min, NextCodes, Mins),
-    reverse(Mins, Mins1),
-    labeling(Mins1, NextCodes),
+    labeling(Mins, NextCodes),
     chars_codes(NextPassword, NextCodes).
