@@ -1,5 +1,5 @@
 module Main where
-import Text.Megaparsec (Parsec, some, sepBy, parse, errorBundlePretty, sepEndBy, choice, manyTill, MonadParsec (eof, try), someTill, (<?>), takeRest, option, anySingle)
+import Text.Megaparsec (Parsec, some, sepBy, parse, errorBundlePretty, sepEndBy, choice, manyTill, MonadParsec (eof, try, lookAhead), someTill, (<?>), takeRest, option, anySingle)
 import Data.Void (Void)
 import Text.Megaparsec.Char (hspace, letterChar, string, newline)
 import Data.List (stripPrefix, mapAccumR)
@@ -10,6 +10,7 @@ import Data.Maybe (mapMaybe)
 import Control.Applicative (Applicative(liftA2), Alternative ((<|>), many))
 import Data.Tuple (swap)
 import Control.Monad (void)
+import Data.Functor ((<&>))
 
 distinct :: Ord a => [a] -> [a]
 distinct = Set.toList . Set.fromList
@@ -95,27 +96,34 @@ shortestPath rules start end =
 
     in  go 0 searchSpace
 
-splitOnAny :: [String] -> String -> [String]
+data Match = Filler String | Match String
+    deriving Show
+
+splitOnAny :: [String] -> String -> [Match]
 splitOnAny splitStrings str =
-    let match  = choice (string <$> splitStrings)
-        filler = anySingle `manyTill` match
+    let match  = Match  <$> choice (string <$> splitStrings)
+        filler = Filler <$> anySingle `manyTill` lookAhead match
 
-        substrs :: Parser [String]
-        substrs = do
-            init <- many (try (match <|> filler))
-            rest <- takeRest
+        substrings :: Parser [Match]
+        substrings = do
+            front <- many (try (match <|> filler))
+            rest  <- takeRest
             case rest of
-                [] -> return init
-                rs -> return (init ++ [rs])
+                [] -> return front
+                rs -> return (front ++ [Filler rest])
 
-    in  case parse substrs "" str of
+    in  case parse substrings "" str of
             Left err -> error (errorBundlePretty err)
             Right result -> result
 
-rewriteTree :: [Rule] -> String -> Tree String
+rewriteTree :: [Rule] -> Match -> Tree String
 rewriteTree rules start =
-    let s = splitOnAny (distinct $ fst <$> rules)
-    in  Node start []
+    let build (Filler str) = (str, [])
+        build (Match str)  = (str, splitOnAny (rules <&> fst & distinct) str)
+
+        tree0 = unfoldTree build start
+
+    in  tree0
 
 main :: IO ()
 main = do
