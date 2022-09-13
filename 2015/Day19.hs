@@ -1,40 +1,114 @@
+
 module Main where
-import Text.Megaparsec (Parsec, some, sepBy, parse, errorBundlePretty, sepEndBy, choice, manyTill, MonadParsec (eof, try, lookAhead), someTill, (<?>), takeRest, option, anySingle)
+import Text.Megaparsec
+import Text.Megaparsec.Char ( letterChar, newline, string )
 import Data.Void (Void)
-import Text.Megaparsec.Char (hspace, letterChar, string, newline)
-import Data.List (stripPrefix, mapAccumR)
+import Data.List (stripPrefix, mapAccumR, intercalate, isSuffixOf, isPrefixOf)
+import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Data.Tree (Tree (Node, rootLabel), unfoldTree, drawTree)
 import Data.Function ((&))
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, isJust, fromJust)
 import Control.Applicative (Applicative(liftA2), Alternative ((<|>), many))
 import Data.Tuple (swap)
 import Control.Monad (void)
 import Data.Functor ((<&>))
+import Control.Arrow (second)
+import Utils (distinct, splitOn)
+import Data.Foldable (find)
 
-distinct :: Ord a => [a] -> [a]
-distinct = Set.toList . Set.fromList
+data RuleBody n = Term String | NonTerm String n (RuleBody n) 
+    deriving Show
 
-type Parser = Parsec Void String
+instance Functor RuleBody where
+  fmap f (Term t) = Term t
+  fmap f (NonTerm t n rest) = 
+      NonTerm t (f n) (fmap f rest)
 
-type Rule = (String, String)
+instance Foldable RuleBody where
+    foldr f b (Term t) = b
+    foldr f b (NonTerm t n rest) = f n (foldr f b rest)
 
-parser :: Parser ([Rule], String)
-parser =
-    let rule :: Parser Rule
-        rule = (,)
-            <$> some letterChar 
-            <*  string " => " 
-            <*> some letterChar 
-        
-        rules :: Parser [Rule]
-        rules = rule `sepEndBy` newline
+instance Traversable RuleBody where
+    sequenceA (Term t) = pure (Term t)
+    sequenceA (NonTerm t fa rest) = 
+        NonTerm t <$> fa <*> sequenceA rest
 
-        molecule :: Parser String
-        molecule = newline *> some letterChar
+type Grammar = Map.Map String [RuleBody String]
 
-    in  (,) <$> rules <*> molecule
+showRuleBody :: RuleBody String -> String
+showRuleBody (Term t) = t
+showRuleBody (NonTerm t n rest) = 
+    t ++ n ++ showRuleBody rest
 
+-- prop> \(nonTerms :: String, str :: String) -> showRuleBody (ruleBodyFrom (pure <$> nonTerms) str) == str
+-- +++ OK, passed 100 tests.
+
+ruleBodyFrom :: [String] -> String -> RuleBody String
+ruleBodyFrom nonTerminals word = go word []
+    where
+        nonTerminals' = reverse <$> nonTerminals
+
+        go :: String -> String -> RuleBody String
+        go [] [] = Term ""
+        go [] pre = Term (reverse pre)
+        go (c:cs) pre =
+            case find (`isPrefixOf` (c:pre)) nonTerminals' of
+                Nothing -> go cs (c:pre)
+                Just nt' -> 
+                    let suf' = fromJust (stripPrefix nt' (c:pre)) 
+                    in  NonTerm (reverse suf') (reverse nt') (go cs [])
+
+grammarFrom :: [(String, String)] -> Grammar
+grammarFrom arrowPairs = 
+    let non_terminals = fst <$> arrowPairs
+
+        ruleFrom (rhs, lhs) = Map.singleton rhs [ruleBodyFrom non_terminals lhs]
+
+    in  Map.unionsWith (++) (ruleFrom <$> arrowPairs)
+
+--- >>> commonPrefix "hello world" "help me"
+-- "hel"
+
+commonPrefix :: String -> String -> String
+commonPrefix [] _ = []
+commonPrefix _ [] = []
+commonPrefix (a:as) (b:bs)
+    | a == b    = a : commonPrefix as bs
+    | otherwise = []
+
+data SyntaxTree = Node String [RuleBody SyntaxTree]
+
+syntaxTree :: Grammar -> String -> SyntaxTree
+syntaxTree grammar start = 
+    let expansions = Map.findWithDefault [] start grammar
+    in  Node start ((syntaxTree grammar <$>) <$> expansions)
+
+getLevel :: Int -> SyntaxTree -> [String]
+getLevel 0 (Node n _) = [n]
+getLevel l (Node _ ruleBodies) = ruleBodies >>= 
+    fmap showRuleBody . traverse (getLevel (l-1))
+
+enumerate :: SyntaxTree -> [String]
+enumerate tree = [0..] >>= \l -> getLevel l tree 
+
+prune :: String -> SyntaxTree -> SyntaxTree
+prune "" (Node rh _) = Node rh []
+prune word (Node rh rbs) = Node rh (go <$> filter go' rbs)
+    where
+        prefix :: RuleBody a -> String
+        prefix (Term t) = t
+        prefix (NonTerm t _ _) = t
+
+        go :: RuleBody SyntaxTree -> RuleBody SyntaxTree
+        go (Term t) = Term t
+        go (NonTerm t tree rest) = 
+            let restWord = fromJust (stripPrefix t word)
+            in  NonTerm t (prune restWord tree) rest
+
+        go' :: RuleBody SyntaxTree -> Bool
+        go' rb = prefix rb `isPrefixOf` word
+
+{- 
 replacementsWith :: Rule -> String -> [String]
 replacementsWith (match,replace) [] = []
 replacementsWith (match,replace) (c:cs) = 
@@ -125,18 +199,48 @@ rewriteTree rules start =
 
     in  tree0
 
+-}
+
+type Parser = Parsec Void String
+
+parser :: Parser (Grammar, String)
+parser =
+    let rule :: Parser (String, String)
+        rule = (,)
+            <$> some letterChar
+            <*  string " => "
+            <*> some letterChar
+
+        rules :: Parser Grammar
+        rules = grammarFrom
+            <$> rule `sepEndBy` newline
+
+        word :: Parser String
+        word = newline *> some letterChar
+
+    in  (,) <$> rules <*> word
+
 main :: IO ()
 main = do
     input <- parse parser "" <$> readFile "2015/input/19.txt"
     case input of
         Left err -> putStr (errorBundlePretty err)
-        Right (rules,molecule) -> do
-            -- putStr "Part 1: "
-            -- print $ length $ distinct $ replacements rules molecule
+        Right (grammar, word) -> do
+            putStr "Part 1: "
+            let rb' = ruleBodyFrom (Map.keys grammar) word
+
+            print $ sum $ (\n -> grammar Map.! n & length) <$> rb'
 
             putStr "Part 2: "
-            let rules' = swap <$> rules
-            print $ shortestPath rules' molecule "e"
+            -- print 
+            --     $ take 100 
+            --     $ enumerate 
+            --     $ prune word 
+            --     $ syntaxTree grammar "e"
+
+            -- print $ length $ distinct $ replacements rules molecule
+            -- let rules' = swap <$> rules
+            -- print $ shortestPath rules' molecule "e"
 
             -- print $ replacements rules molecule
             -- putStr $ drawTree
