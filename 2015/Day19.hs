@@ -1,249 +1,153 @@
-
-module Main where
-import Text.Megaparsec
+module Day19 where
+import Text.Megaparsec (Parsec, sepEndBy, choice, chunk, MonadParsec (lookAhead, try), eof, someTill)
 import Text.Megaparsec.Char ( letterChar, newline, string )
-import Data.Void (Void)
-import Data.List (stripPrefix, mapAccumR, intercalate, isSuffixOf, isPrefixOf)
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import Data.Function ((&))
-import Data.Maybe (mapMaybe, isJust, fromJust)
-import Control.Applicative (Applicative(liftA2), Alternative ((<|>), many))
-import Data.Tuple (swap)
-import Control.Monad (void)
+import Data.Maybe (catMaybes)
+import Control.Applicative ((<|>), many, some)
 import Data.Functor ((<&>))
+import Utils (distinct, Parser, parseHardError)
+import Data.Foldable (find, for_)
 import Control.Arrow (second)
-import Utils (distinct, splitOn)
-import Data.Foldable (find)
 
-data RuleBody n = Term String | NonTerm String n (RuleBody n) 
-    deriving Show
+type Rule = (String, String)
 
-instance Functor RuleBody where
-  fmap f (Term t) = Term t
-  fmap f (NonTerm t n rest) = 
-      NonTerm t (f n) (fmap f rest)
+inputParser :: Parser ([Rule], String)
+inputParser =
+    let rule :: Parser Rule
+        rule = (,) <$>
+            some letterChar <* string " => " <*> some letterChar
 
-instance Foldable RuleBody where
-    foldr f b (Term t) = b
-    foldr f b (NonTerm t n rest) = f n (foldr f b rest)
-
-instance Traversable RuleBody where
-    sequenceA (Term t) = pure (Term t)
-    sequenceA (NonTerm t fa rest) = 
-        NonTerm t <$> fa <*> sequenceA rest
-
-type Grammar = Map.Map String [RuleBody String]
-
-showRuleBody :: RuleBody String -> String
-showRuleBody (Term t) = t
-showRuleBody (NonTerm t n rest) = 
-    t ++ n ++ showRuleBody rest
-
--- prop> \(nonTerms :: String, str :: String) -> showRuleBody (ruleBodyFrom (pure <$> nonTerms) str) == str
--- +++ OK, passed 100 tests.
-
-ruleBodyFrom :: [String] -> String -> RuleBody String
-ruleBodyFrom nonTerminals word = go word []
-    where
-        nonTerminals' = reverse <$> nonTerminals
-
-        go :: String -> String -> RuleBody String
-        go [] [] = Term ""
-        go [] pre = Term (reverse pre)
-        go (c:cs) pre =
-            case find (`isPrefixOf` (c:pre)) nonTerminals' of
-                Nothing -> go cs (c:pre)
-                Just nt' -> 
-                    let suf' = fromJust (stripPrefix nt' (c:pre)) 
-                    in  NonTerm (reverse suf') (reverse nt') (go cs [])
-
-grammarFrom :: [(String, String)] -> Grammar
-grammarFrom arrowPairs = 
-    let non_terminals = fst <$> arrowPairs
-
-        ruleFrom (rhs, lhs) = Map.singleton rhs [ruleBodyFrom non_terminals lhs]
-
-    in  Map.unionsWith (++) (ruleFrom <$> arrowPairs)
-
---- >>> commonPrefix "hello world" "help me"
--- "hel"
-
-commonPrefix :: String -> String -> String
-commonPrefix [] _ = []
-commonPrefix _ [] = []
-commonPrefix (a:as) (b:bs)
-    | a == b    = a : commonPrefix as bs
-    | otherwise = []
-
-data SyntaxTree = Node String [RuleBody SyntaxTree]
-
-syntaxTree :: Grammar -> String -> SyntaxTree
-syntaxTree grammar start = 
-    let expansions = Map.findWithDefault [] start grammar
-    in  Node start ((syntaxTree grammar <$>) <$> expansions)
-
-getLevel :: Int -> SyntaxTree -> [String]
-getLevel 0 (Node n _) = [n]
-getLevel l (Node _ ruleBodies) = ruleBodies >>= 
-    fmap showRuleBody . traverse (getLevel (l-1))
-
-enumerate :: SyntaxTree -> [String]
-enumerate tree = [0..] >>= \l -> getLevel l tree 
-
-prune :: String -> SyntaxTree -> SyntaxTree
-prune "" (Node rh _) = Node rh []
-prune word (Node rh rbs) = Node rh (go <$> filter go' rbs)
-    where
-        prefix :: RuleBody a -> String
-        prefix (Term t) = t
-        prefix (NonTerm t _ _) = t
-
-        go :: RuleBody SyntaxTree -> RuleBody SyntaxTree
-        go (Term t) = Term t
-        go (NonTerm t tree rest) = 
-            let restWord = fromJust (stripPrefix t word)
-            in  NonTerm t (prune restWord tree) rest
-
-        go' :: RuleBody SyntaxTree -> Bool
-        go' rb = prefix rb `isPrefixOf` word
-
-{- 
-replacementsWith :: Rule -> String -> [String]
-replacementsWith (match,replace) [] = []
-replacementsWith (match,replace) (c:cs) = 
-    case stripPrefix match (c:cs) of
-        Nothing   -> (c:) <$> replacementsWith (match,replace) cs
-        Just rest -> 
-            let rep  = replace ++ rest
-                reps = (c:) <$> replacementsWith (match,replace) cs 
-            in  rep : reps
-
-replacements :: [Rule] -> String -> [String]
-replacements rules molecule =
-    concatMap (`replacementsWith` molecule) rules
-
-replacementTree :: [Rule] -> String -> Tree String
-replacementTree rules = 
-    unfoldTree (\str -> (str, replacements rules str))
-
-pruneDepth :: Int -> Tree String -> Tree String
-pruneDepth 0 (Node str _) = Node str []
-pruneDepth d (Node str children) = 
-    Node str (pruneDepth (d-1) <$> children)
-
--- pruneLength :: Int -> Tree String -> Tree String
--- pruneLength l (Node str children) =
---     let children' = filter ((l >=) . length . rootLabel) children
---     in  Node str (pruneLength l <$> children')
-
-pruneDuplicates :: Tree String -> Tree String
-pruneDuplicates =
-    let go :: Set.Set String -> Tree String -> (Set.Set String, Tree String)
-        go seen0 (Node str children0) =
-            let seen1 = Set.insert str seen0
-                notSeen = (`Set.notMember` seen1) . rootLabel
-
-                children1 = filter notSeen children0
-                (seen2, children2) = mapAccumR go seen1 children1
-
-            in  (seen2, Node str children2)
-    in  snd . go Set.empty
-
-shortestPath :: [Rule] -> String -> String -> Maybe Int
-shortestPath rules start end =
-    let searchSpace = replacementTree rules start
-            -- & pruneLength (length end)
-            & pruneDuplicates
-
-        go :: Int -> Tree String -> Maybe Int
-        go depth (Node str children)
-            | str == end = Just depth
-            | otherwise  = 
-                let minJust :: Tree String -> Maybe Int -> Maybe Int
-                    minJust child Nothing = go (depth+1) child
-                    minJust child (Just bestDepth) =
-                        case go (depth+1) (pruneDepth (bestDepth-1) child) of
-                            Nothing -> Just bestDepth
-                            Just bestDepth' -> Just (min bestDepth bestDepth')
-                in  foldr minJust Nothing children
-
-    in  go 0 searchSpace
-
-data Match = Filler String | Match String
-    deriving Show
-
-splitOnAny :: [String] -> String -> [Match]
-splitOnAny splitStrings str =
-    let match  = Match  <$> choice (string <$> splitStrings)
-        filler = Filler <$> anySingle `manyTill` lookAhead match
-
-        substrings :: Parser [Match]
-        substrings = do
-            front <- many (try (match <|> filler))
-            rest  <- takeRest
-            case rest of
-                [] -> return front
-                rs -> return (front ++ [Filler rest])
-
-    in  case parse substrings "" str of
-            Left err -> error (errorBundlePretty err)
-            Right result -> result
-
-rewriteTree :: [Rule] -> Match -> Tree String
-rewriteTree rules start =
-    let build (Filler str) = (str, [])
-        build (Match str)  = (str, splitOnAny (rules <&> fst & distinct) str)
-
-        tree0 = unfoldTree build start
-
-    in  tree0
-
--}
-
-type Parser = Parsec Void String
-
-parser :: Parser (Grammar, String)
-parser =
-    let rule :: Parser (String, String)
-        rule = (,)
-            <$> some letterChar
-            <*  string " => "
-            <*> some letterChar
-
-        rules :: Parser Grammar
-        rules = grammarFrom
-            <$> rule `sepEndBy` newline
+        rules :: Parser [Rule]
+        rules = rule `sepEndBy` newline
 
         word :: Parser String
         word = newline *> some letterChar
 
     in  (,) <$> rules <*> word
 
+data Token a = Term String | NonTerm a
+    deriving (Show, Eq)
+
+instance Functor Token where
+    fmap f (Term    t) = Term t
+    fmap f (NonTerm t) = NonTerm (f t)
+
+tokenizer :: [String] -> Parser [Token String]
+tokenizer rule_heads =
+    let non_term :: Parser (Token String)
+        non_term = NonTerm <$> choice (chunk <$> rule_heads)
+
+        term_then_non_term :: Parser (Token String)
+        term_then_non_term = Term <$> someTill letterChar (lookAhead non_term)
+
+        term_then_eof :: Parser (Token String)
+        term_then_eof = Term <$> some letterChar <* eof
+
+        token = try non_term
+            <|> try term_then_non_term
+            <|> term_then_eof
+
+    in  many token
+
+untokenize :: [Token String] -> String
+untokenize = concatMap unwrap
+    where
+        unwrap (Term t) = t
+        unwrap (NonTerm t) = t
+
+type Grammar = Map.Map String [[Token String]]
+
+singleReplacementCount :: Grammar -> [Token String] -> Int
+singleReplacementCount grammar tokens =
+    let total_count :: Int
+        total_count =
+            let replace_options (Term _) = 0
+                replace_options (NonTerm t) = length $ grammar Map.! t
+            in  sum $ replace_options <$> tokens
+
+        adjacent_non_terms :: [(String, String)]
+        adjacent_non_terms =
+            let non_term_pair (NonTerm t1) (NonTerm t2) = Just (t1, t2)
+                non_term_pair _ _ = Nothing
+            in  catMaybes $ zipWith non_term_pair tokens (tail tokens)
+
+        duplicate_count :: Int
+        duplicate_count = sum [ 1
+            | (rh1, rh2) <- adjacent_non_terms
+            , rb1 <- untokenize <$> grammar Map.! rh1
+            , rb2 <- untokenize <$> grammar Map.! rh2
+            , rh1 ++ rb2 == rb1 ++ rh2
+            ]
+
+    in  total_count - duplicate_count
+
+data SyntaxTree = Node String [[Token SyntaxTree]]
+
+syntaxTree :: Grammar -> String -> SyntaxTree
+syntaxTree grammar = expand_rule_head
+    where
+        expand_rule_head :: String -> SyntaxTree
+        expand_rule_head rh = Node rh (expand_rule_body <$> grammar Map.! rh)
+
+        expand_rule_body :: [Token String] -> [Token SyntaxTree]
+        expand_rule_body = fmap (fmap expand_rule_head)
+
+enumerate :: SyntaxTree -> [String]
+enumerate tree = [0..] >>= \level -> go level (NonTerm tree)
+    where
+        go :: Int -> Token SyntaxTree -> [String]
+        go _ (Term t) = [t]
+        go 0 (NonTerm (Node t _)) = [t]
+        go l (NonTerm (Node _ rbs)) = do
+            rb  <- rbs
+            rb' <- traverse (go (l-1)) rb
+            return $ concat rb'
+
+prune :: [Token String] -> SyntaxTree -> SyntaxTree
+prune target (Node rh rbs) = Node rh (catMaybes $ go target <$> rbs)
+    where
+        align :: [Token String] -> [Token SyntaxTree] -> Maybe [([Token String], [Token SyntaxTree])]
+        align word rb = 
+            let is_non_term (NonTerm _) = True
+                is_non_term _ = False
+                
+                pre = takeWhile is_non_term rb
+                post = dropWhile is_non_term rb
+
+            in  case post of
+                    [] -> Just [(word, pre)]
+                    (t:ts) -> 
+                        let Term term = t
+                            word_pre = takeWhile (/= Term term) word
+                            word_post = dropWhile (/= Term term) word
+                        in  case word_post of
+                                [] -> Nothing
+                                (w:ws) -> ((word_pre ++ [w], pre ++ [t]) :) <$> align ws ts
+
+        go' :: ([Token String], [Token SyntaxTree]) -> [Token SyntaxTree]
+        go' (word, tokens) = fmap (prune word) <$> tokens
+
+        go :: [Token String] -> [Token SyntaxTree] -> Maybe [Token SyntaxTree]
+        go word tokens = concatMap go' <$> align word tokens 
+
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/19.txt"
-    case input of
-        Left err -> putStr (errorBundlePretty err)
-        Right (grammar, word) -> do
-            putStr "Part 1: "
-            let rb' = ruleBodyFrom (Map.keys grammar) word
+    (rules, target_word) <- parseHardError inputParser <$> readFile "2015/input/19.txt"
 
-            print $ sum $ (\n -> grammar Map.! n & length) <$> rb'
+    let rule_heads = distinct $ fst <$> rules
+        target_word_tokenized = parseHardError (tokenizer rule_heads) target_word
+        rules_tokenized = second (parseHardError (tokenizer rule_heads)) <$> rules
 
-            putStr "Part 2: "
-            -- print 
-            --     $ take 100 
-            --     $ enumerate 
-            --     $ prune word 
-            --     $ syntaxTree grammar "e"
+        grammar :: Grammar
+        grammar = Map.unionsWith (++) . fmap singleton $ rules_tokenized
+            where
+                singleton (rh, rb) = Map.singleton rh [rb]
 
-            -- print $ length $ distinct $ replacements rules molecule
-            -- let rules' = swap <$> rules
-            -- print $ shortestPath rules' molecule "e"
+    putStr "Part 1: "
+    print $ singleReplacementCount grammar target_word_tokenized
 
-            -- print $ replacements rules molecule
-            -- putStr $ drawTree
-            --        $ pruneDuplicates
-            --        -- $ pruneLength (length molecule)
-            --        $ replacementTree rules' molecule
+    putStr "Part 2: "
+    let enum = enumerate $ prune target_word_tokenized $ syntaxTree grammar "e"
+
+    for_ (take 100000 $ enum) print

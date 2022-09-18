@@ -1,12 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Utils (distinct, splitOn) where
+module Utils (distinct, splitOn, parseHardError, Parser) where
 
 import Test.QuickCheck
 
 import Data.List (isSuffixOf, stripPrefix, delete, isInfixOf)
 import Data.Maybe (isJust)
 import qualified Data.Set as Set
+import Data.Void (Void)
+import Text.Megaparsec (Parsec, parse, errorBundlePretty)
 
 -- stripSuffix
 
@@ -74,3 +76,13 @@ prop2_distinct pre c suf =
 
 distinct :: Ord a => [a] -> [a]
 distinct = Set.toList . Set.fromList
+
+-- parseHardError
+
+type Parser = Parsec Void String
+
+parseHardError :: Parser a -> String -> a
+parseHardError parser input =  
+    case parse parser "" input of
+        Left err -> error (errorBundlePretty err)
+        Right output -> output
