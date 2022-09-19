@@ -3,12 +3,15 @@ import Text.Megaparsec (Parsec, sepEndBy, choice, chunk, MonadParsec (lookAhead,
 import Text.Megaparsec.Char ( letterChar, newline, string )
 import qualified Data.Map as Map
 import Data.Function ((&))
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, mapMaybe, listToMaybe, isJust)
 import Control.Applicative ((<|>), many, some)
 import Data.Functor ((<&>))
 import Utils (distinct, Parser, parseHardError)
 import Data.Foldable (find, for_)
 import Control.Arrow (second)
+import Data.List (stripPrefix, sortOn)
+import Data.Tuple (swap)
+import Data.Ord (Down(Down))
 
 type Rule = (String, String)
 
@@ -104,20 +107,30 @@ enumerate tree = [0..] >>= \level -> go level (NonTerm tree)
             rb' <- traverse (go (l-1)) rb
             return $ concat rb'
 
+-- >>> "glajroiaAAaaaa" `rewriteWith` ("AA", "XX")
+-- Just "glajroiaXXaaaa"
+
+rewriteWith :: String -> (String, String) -> Maybe String
+rewriteWith [] (from, to) = Nothing
+rewriteWith (c:cs) (from, to) =
+    case stripPrefix from (c:cs) of
+        Nothing -> (c :) <$> rewriteWith cs (from, to)
+        Just suffix -> Just (to ++ suffix)
+
 prune :: [Token String] -> SyntaxTree -> SyntaxTree
 prune target (Node rh rbs) = Node rh (catMaybes $ go target <$> rbs)
     where
         align :: [Token String] -> [Token SyntaxTree] -> Maybe [([Token String], [Token SyntaxTree])]
-        align word rb = 
+        align word rb =
             let is_non_term (NonTerm _) = True
                 is_non_term _ = False
-                
+
                 pre = takeWhile is_non_term rb
                 post = dropWhile is_non_term rb
 
             in  case post of
                     [] -> Just [(word, pre)]
-                    (t:ts) -> 
+                    (t:ts) ->
                         let Term term = t
                             word_pre = takeWhile (/= Term term) word
                             word_post = dropWhile (/= Term term) word
@@ -129,7 +142,15 @@ prune target (Node rh rbs) = Node rh (catMaybes $ go target <$> rbs)
         go' (word, tokens) = fmap (prune word) <$> tokens
 
         go :: [Token String] -> [Token SyntaxTree] -> Maybe [Token SyntaxTree]
-        go word tokens = concatMap go' <$> align word tokens 
+        go word tokens = concatMap go' <$> align word tokens
+
+search :: [Rule] -> String -> [[Rule]]
+search rules "e" = [[]]
+search rules word = do
+    rule <- rules
+    case word `rewriteWith` rule of
+        Nothing    -> []
+        Just word' -> (rule :) <$> search rules word'
 
 main :: IO ()
 main = do
@@ -148,6 +169,15 @@ main = do
     print $ singleReplacementCount grammar target_word_tokenized
 
     putStr "Part 2: "
-    let enum = enumerate $ prune target_word_tokenized $ syntaxTree grammar "e"
+    let rules_inv = sortOn (Down . length . fst) (swap <$> rules)
+        word' = "CRnCaCaFYFYFArF"
 
-    for_ (take 100000 $ enum) print
+    -- print $ takeWhile isJust $ iterate rw (Just target_word)
+
+    print $ take 1 $ search rules_inv target_word
+
+    -- print $ take 10 $ iterate rw (Just "NRnBSiRnCaRnFArYFArFArF")
+
+    -- let enum = enumerate $ prune target_word_tokenized $ syntaxTree grammar "e"
+
+    -- for_ (take 100000 $ enum) print
