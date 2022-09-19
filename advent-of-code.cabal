@@ -142,6 +142,8 @@ executable day19-2015
                     , megaparsec
                     , containers
                     , QuickCheck
+                    , vector
+                    , array
     hs-source-dirs:   2015
     default-language: Haskell2010
     other-modules:    Utils

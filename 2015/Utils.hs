@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Utils (distinct, splitOn, parseHardError, Parser) where
+module Utils (distinct, splitOn, parseHardError, Parser, converge) where
 
 import Test.QuickCheck
 
@@ -86,3 +86,10 @@ parseHardError parser input =
     case parse parser "" input of
         Left err -> error (errorBundlePretty err)
         Right output -> output
+
+-- converge
+
+converge :: Eq a => (a -> a) -> a -> a
+converge f a
+    | a == f a  = a
+    | otherwise = converge f (f a)
