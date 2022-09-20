@@ -1,6 +1,4 @@
-{-# LANGUAGE TupleSections #-}
 module Main where
-
 import Utils (distinct, Parser, parseHardError, converge)
 import Text.Megaparsec (Parsec, sepEndBy, some, many)
 import Text.Megaparsec.Char ( letterChar, newline, string, lowerChar )
@@ -10,7 +8,6 @@ import qualified Data.Map as M
 import Control.Monad (guard)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import qualified Data.IntMap as IntMap
 import Data.IntMap (IntMap)
 import Control.Arrow (second)
 
@@ -58,109 +55,72 @@ main = do
             rule_body <- rule_bodies
             return (rule_head, rule_body)
 
-    print $ run rules "e" target_word
-    -- print $ earley' grammar "e" target_word
-
-type EarleyState = (String, [String], Int)
-
-earley' :: Grammar -> String -> [String] -> (Int, IntMap [EarleyState])
-earley' grammar start_word target_word = go (0, IntMap.singleton 0 initial_states)
-    where
-        initial_states = do
-            rule_body <- grammar Map.! start_word
-            return (start_word, rule_body, 0)
-
-        go :: (Int, IntMap [EarleyState]) -> (Int, IntMap [EarleyState])
-        go (k, statesMap)
-            | any is_finish states = (k, statesMap)
-            | otherwise = go (k+1, scan k $ converge (predict_and_complete k) statesMap)
-            where
-                states = statesMap IntMap.! k
-
-                is_finish (rule_head, [], 0) = rule_head == start_word
-                is_finish _                  = False
-
-        next_element_is :: EarleyState -> String -> Bool
-        next_element_is (_, next : _, _) element = next == element
-        next_element_is _                _       = False
-
-        predict_and_complete :: Int -> IntMap [EarleyState] -> IntMap [EarleyState]
-        predict_and_complete k stateMap = IntMap.insert k (distinct $ states ++ new_states) stateMap
-            where
-                states = stateMap IntMap.! k
-
-                new_states = do
-                    state <- states
-
-                    case state of
-                        (rule_head, []         , j) -> -- completion
-                            seek <$> filter (`next_element_is` rule_head) states
-                                where
-                                    seek (rule_head, rule_body, j) = (rule_head, drop 1 rule_body, k)
-
-                        (_        , next : rest, j) -> -- prediction
-                            case Map.lookup next grammar of
-                                Nothing          -> []
-                                Just rule_bodies -> (next, , k) <$> rule_bodies
-
-        scan :: Int -> IntMap [EarleyState] -> IntMap [EarleyState]
-        scan k statesMap = IntMap.insert (k+1) new_states statesMap
-            where
-                next_token = target_word !! k -- TODO
-
-                seek (rule_head, rule_body, j) = (rule_head, drop 1 rule_body, j)
-
-                new_states = do
-                    state <- statesMap IntMap.! k
-                    guard (state `next_element_is` next_token)
-                    return (seek state)
+    print $ earley rules "e" target_word
+        -- tree <- last $ earley rules "e" target_word
+        -- case tree of
+        --     (Node (rule_head, [], 0) sub_trees) -> [stateCount tree]
+        --     _ -> []
 
 type Rule = (String, [String])
 
-type State = (String , [String], Int)
+type EarleyState = (String, [String], Int)
+type EarleyState' = (EarleyState, [EarleyState])
 
-completeWith :: (Eq b, Ord a) => (b -> b -> b) -> ((a,b) -> [(a,b)]) -> [(a,b)] -> [(a,b)]
-completeWith g f start = rs where
-  -- xs :: [[M.Map a b]]
-  xs = x0 : step x0 xs
-  x0 = M.fromListWith g start
-  rs = M.assocs $ foldl (M.unionWith g) M.empty xs
+data SyntaxTree = Node EarleyState [SyntaxTree]
+    deriving (Ord, Show)
 
-  step seen [] = []
-  step seen (x:xs) = if M.null x then [] else y' : step seen' xs where
-    y     = M.fromListWith g $ concatMap f $ M.assocs x
-    y'    = M.differenceWith (already g) y seen
-    seen' = M.unionWith g y seen
+instance Eq SyntaxTree where
+    Node state _ == Node state' _ = state == state'
 
--- remove if y is already best  
-already :: Eq a1 => (a2 -> a1 -> a1) -> a2 -> a1 -> Maybe a2
-already f x y = if f x y == y then Nothing else Just x
+stateCount :: SyntaxTree -> Int
+stateCount (Node _ sub_trees) = 1 + sum (fmap stateCount sub_trees)
 
-earley :: [Rule] -> String -> [String] -> [[(State, Int)]]
-earley rules start_token target_word = ss where
+earley :: [Rule] -> String -> [String] -> [[SyntaxTree]]
+earley rules start_token target_word = state_list'
+  where
+    initial_trees :: [SyntaxTree]
+    initial_trees = do
+        (rule_head, rule_body) <- rules
+        guard (rule_head == start_token)
+        return $ Node (rule_head, rule_body, 0) []
 
-  start_rules = [((x,ys,0),0) | (x,ys) <- rules, x == start_token]
+    complete_and_predict :: Int -> SyntaxTree -> [SyntaxTree]
+    complete_and_predict k tree@(Node (rule_head, [], j) sub_trees) = do
+        -- completion
+        Node (rule_head', next_token' : rest_tokens', i) sub_trees' <- state_array' ! j
+        guard (next_token' == rule_head)
+        return $ Node (rule_head', rest_tokens', i) (tree : sub_trees')
+    complete_and_predict k tree@(Node (_, next_token : _, j) _) = do
+        -- prediction
+        (rule_head', rule_body') <- rules
+        guard (next_token == rule_head')
+        return $ Node (rule_head', rule_body', k) []
 
-  n = length target_word
+    complete_with :: Int -> [SyntaxTree] -> [SyntaxTree]
+    complete_with k start = snd <$> rs
+      where
+        -- xs :: [[M.Map a b]]
+        x0 = M.fromListWith min $ zip (fmap stateCount start) start
+        xs = x0 : step x0 xs
+        rs = M.assocs $ foldl (M.unionWith min) M.empty xs
 
-  sa = listArray (0,n) ss
-  ss = s0 : zipWith3 sk [1..] target_word ss
+        f' (_, tree) = zip (stateCount <$> complete_and_predict k tree) (complete_and_predict k tree)
 
-  s0       = completeWith min (predComp 0) start_rules
-  sk k z s = completeWith min (predComp k)
-               [((x,ys,j),c) | ((x,y:ys,j),c) <- s, y == z]
+        step seen [] = []
+        step seen (x : xs) = if M.null x then [] else y' : step seen' xs
+          where
+            y = M.fromListWith min $ concatMap f' $ M.assocs x
+            y' = M.differenceWith (already min) y seen
+            seen' = M.unionWith min y seen
 
-  predComp k ((rule_head, []    , j), c) = do -- completion
-    ((x',y':ys',i),d) <- sa ! j
-    guard (y' == rule_head)
-    return ((x',ys',i),d+c+1)
-  predComp k ((_        , next:_, j), c) = do -- prediction
-    (x', ys') <- rules
-    guard (x' == next)
-    return ((x',ys',k),0)
+    -- remove if y is already best  
+    already :: Eq a1 => (a2 -> a1 -> a1) -> a2 -> a1 -> Maybe a2
+    already f x y = if f x y == y then Nothing else Just x
 
-run :: [Rule] -> String -> [String] -> [Int]
-run rules startSym zs = [ c+1 |
-    ((x,ys,j),c) <- last $ earley rules startSym zs,
-      x == startSym, null ys, j == 0
-  ]
+    n = length target_word
+
+    state_array' = listArray (0, n) state_list'
+    state_list' = s0' : zipWith3 sk' [1 ..] target_word state_list'
+
+    s0'       = complete_with 0 initial_trees
+    sk' k z s = complete_with k [ Node (x, ys, j) sub_trees | Node (x, y : ys, j) sub_trees <- s, y == z]
