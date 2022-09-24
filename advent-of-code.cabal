@@ -189,6 +189,17 @@ executable day25-2015
     hs-source-dirs:   2015
     default-language: Haskell2010
 
+-- 2016
+
+executable day01-2016
+    main-is:          Day01.hs
+    other-modules:    Utils
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+                    , containers
+    hs-source-dirs:   2016
+    default-language: Haskell2010
+
 -- 2019
 
 executable day01-2019
