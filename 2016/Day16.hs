@@ -1,55 +1,62 @@
 module Main where
 import qualified Data.List as L
 
-main :: IO ()
-main = do
-  let input = "11100010111110100" 
-      fill_length = 272
-      -- fill_length = 35651584
+interleave :: [a] -> [a] -> [a]
+interleave []     bs = bs
+interleave (a:as) bs = a : head bs : interleave as (tail bs)
 
-  putStr "Part 1: "
-  print $ length $ checksum $ generateData fill_length input
-
-  putStr "Part 2: "
-
--- >>> "111000101111101001"
--- >>> invertReverse "111000101111101001"
--- >>> checksum "111000101111101001" 
--- >>> reverse $ checksum (invertReverse "111000101111101001")
--- "111000101111101001"
--- "011010000010111000"
--- "101011000"
--- "101011000"
-
-invertReverse :: String -> String
-invertReverse str = L.reverse (invert <$> str)
+generateData :: String -> String
+generateData str = go separators
   where
     invert '1' = '0'
     invert '0' = '1'
     invert _   = undefined
 
-generateData :: Int -> String -> String
-generateData fill_length = 
-  take fill_length . head . dropWhile not_enough_data . iterate step
-  where
-    not_enough_data str = length str < fill_length
-    step str = str <> "0" <> invertReverse str
+    str_inv_rev = L.reverse (invert <$> str)
 
+    separators :: String
+    separators = cycle "01" `interleave` separators
 
-chunks :: Int -> [a] -> [[a]]
-chunks len list
-  | length list < len = []
-  | otherwise = chunk : chunks len rest
-  where
-    (chunk, rest) = L.splitAt len list
+    go :: String -> String
+    go (sep1:sep2:seps) = str <> (sep1 : str_inv_rev) <> (sep2 : go seps)
+    go _ = error "separators should be infinite"
 
 checksum :: String -> String
-checksum = head . dropWhile (even . length) . iterate step
+checksum str = combine chunk <> checksum rest
   where
+    (chunk, rest) = L.splitAt 2 str
+
     combine "00" = "1"
     combine "11" = "1"
     combine "10" = "0"
     combine "01" = "0"
     combine _    = undefined
 
-    step = concatMap combine . chunks 2
+-- >>> factorOutTwos 272
+-- >>> factorOutTwos 35651584
+-- (4,17)
+-- (21,17)
+
+factorOutTwos :: Int -> (Int, Int)
+factorOutTwos x 
+  | odd x = (0, x)
+  | otherwise = (two_count + 1, rem_factors)
+  where
+    (two_count, rem_factors) = factorOutTwos (x `div` 2)
+
+checksumWithFillLength :: Int -> String -> String
+checksumWithFillLength fill_length = take output_length . repeated_checksum
+  where
+    (checksum_apply_count, output_length) = factorOutTwos fill_length
+    repeated_checksum = (!! checksum_apply_count) . iterate checksum
+
+main :: IO ()
+main = do
+  let input = "11100010111110100" 
+      data_stream = generateData input
+
+  putStr "Part 1: "
+  print $ checksumWithFillLength 272 data_stream
+
+  putStr "Part 2: "
+  print $ checksumWithFillLength 35651584 data_stream
