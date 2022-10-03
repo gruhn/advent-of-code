@@ -349,7 +349,6 @@ executable day21-2016
     build-depends:    base ^>=4.14.3.0
                     , megaparsec
                     , containers
-                    , text
     hs-source-dirs:   2016
     default-language: Haskell2010
 
