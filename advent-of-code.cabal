@@ -281,6 +281,7 @@ executable day11-2016
 executable day12-2016
     main-is:          Day12.hs
     other-modules:    Utils
+                    , Interpreter
     build-depends:    base ^>=4.14.3.0
                     , megaparsec
                     , containers
@@ -359,6 +360,17 @@ executable day22-2016
                     , megaparsec
                     , containers
                     , search-algorithms
+    hs-source-dirs:   2016
+    default-language: Haskell2010
+
+executable day23-2016
+    main-is:          Day23.hs
+    other-modules:    Utils
+                    , Interpreter
+    build-depends:    base ^>=4.14.3.0
+                    , megaparsec
+                    , containers
+                    , vector
     hs-source-dirs:   2016
     default-language: Haskell2010
 
