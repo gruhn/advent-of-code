@@ -9,7 +9,7 @@ main = do
   program <- parseHardError parser <$> readFile "2016/input/12.txt"
 
   putStr "Part 1: "
-  print $ getMemory $ run program mempty
+  print $ getMemory $ last $ run program mempty
 
   putStr "Part 2: "
-  print $ getMemory $ run program (M.singleton 'c' 1)
+  print $ getMemory $ last $ run program (M.singleton 'c' 1)

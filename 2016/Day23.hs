@@ -12,10 +12,10 @@ main = do
   print program
 
   putStr "Part 1: "
-  print $ run program (M.singleton 'a' 7)
+  print $ last $ run program (M.singleton 'a' 7)
 
   putStr "Part 2: "
   let f s = getPointer s == 16 && (getMemory s M.! 'c' <= length program)
   print $ take 10 
     $ filter f
-    $ iterate eval $ State program (M.singleton 'a' 12) 0
+    $ run program (M.singleton 'a' 12)
