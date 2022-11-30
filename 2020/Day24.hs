@@ -58,7 +58,7 @@ solver coords = do
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2020/input/24.txt"
+    input <- parse parser "" <$> readFile "input/24.txt"
     case input of 
         Left error -> putStr (errorBundlePretty error)
         Right parsed -> solver parsed

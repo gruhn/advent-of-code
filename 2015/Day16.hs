@@ -33,7 +33,7 @@ submap keys =
 
 main :: IO ()
 main = do 
-    input <- parse parser "" <$> readFile "2015/input/16.txt"
+    input <- parse parser "" <$> readFile "input/16.txt"
     case input of
         Left err -> putStr (errorBundlePretty err)
         Right input -> do

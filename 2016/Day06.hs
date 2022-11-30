@@ -9,7 +9,7 @@ itemsWithFrequency =
 
 main :: IO ()
 main = do
-  rows <- lines <$> readFile "2016/input/06.txt"
+  rows <- lines <$> readFile "input/06.txt"
   let columns = transpose rows
 
   putStr "Part 1: "

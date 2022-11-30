@@ -86,7 +86,7 @@ compute (_, Operator 7 packets) =
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "2021/16-input.txt"
+    inputRaw <- readFile "input/16.txt"
     let parsed = do 
             hexParsed <- parse (hexString <* eof) "" inputRaw
             parse (many (try packet)) "" hexParsed

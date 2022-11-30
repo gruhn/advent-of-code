@@ -78,7 +78,7 @@ duplicates = go mempty
 
 main :: IO ()
 main = do
-  moves <- parseHardError parser <$> readFile "2016/input/01.txt"
+  moves <- parseHardError parser <$> readFile "input/01.txt"
 
   let path = walk (N,(0,0)) moves
 

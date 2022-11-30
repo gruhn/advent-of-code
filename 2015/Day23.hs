@@ -85,7 +85,7 @@ run input program =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/23.txt"
+    input <- parse parser "" <$> readFile "input/23.txt"
     case input of
         Left err -> putStr (errorBundlePretty err)
         Right program -> do

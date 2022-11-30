@@ -23,7 +23,7 @@ intersections = map (foldr1 Set.intersection)
 
 main :: IO ()
 main = do
-    groups <- parseFromFile groupListP "2020/input/06.txt"
+    groups <- parseFromFile groupListP "input/06.txt"
 
     putStr "Part 1: "
     print $ sum . map Set.size . unions <$> groups

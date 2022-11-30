@@ -66,7 +66,7 @@ pathCost graph path =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/09.txt"
+    input <- parse parser "" <$> readFile "input/09.txt"
     case input of
         Left err -> putStr (errorBundlePretty err)
         Right graph -> do

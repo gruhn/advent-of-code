@@ -61,7 +61,7 @@ step' (state0, pos0, dir0, area0) =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/11.txt"
+    input <- parse parser "" <$> readFile "input/11.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right program -> do 

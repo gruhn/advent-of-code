@@ -50,7 +50,7 @@ part1 (time, busses) =
 
 main :: IO ()
 main = do
-    input <- parseFromFile parser "2020/input/13.txt"
+    input <- parseFromFile parser "input/13.txt"
 
     putStr "Part 1 : "
     print $ part1 <$> input

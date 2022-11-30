@@ -60,7 +60,7 @@ matching graph
 
 main :: IO ()
 main = do
-    input <- parseFromFile parser "2020/input/21.txt"
+    input <- parseFromFile parser "input/21.txt"
     case input of 
         Left err -> print err
         Right foods -> do

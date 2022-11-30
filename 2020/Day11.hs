@@ -122,7 +122,7 @@ solver grid = do
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2020/input/11.txt"
+    input <- parse parser "" <$> readFile "input/11.txt"
 
     case input of 
         Left error -> putStr (errorBundlePretty error)

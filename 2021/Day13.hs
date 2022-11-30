@@ -42,7 +42,7 @@ pair = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "2021/13-input.txt"
+    inputRaw <- readFile "input/13.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
     let results = do
             (dots, ins) <- parsed

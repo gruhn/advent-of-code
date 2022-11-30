@@ -7,6 +7,7 @@ import Data.Char (digitToInt, intToDigit)
 import qualified Data.Map as Map
 import Text.Parsec.String (Parser, parseFromFile)
 import Data.Maybe (mapMaybe)
+import ParseUtil (Grid(..), gridP)
 
 type Cave = Grid Int
 
@@ -62,7 +63,7 @@ multiplyCave factor cave =
 
 main :: IO ()
 main = do
-    caveEither <- parseFromFile caveP "2021/15-input.txt"
+    caveEither <- parseFromFile caveP "input/15.txt"
     putStr "Part 1: "
     print $ search <$> caveEither
     putStr "Part 2: "

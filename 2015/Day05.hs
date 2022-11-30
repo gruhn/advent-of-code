@@ -61,7 +61,7 @@ isNice2 str =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/05.txt"
+    input <- parse parser "" <$> readFile "input/05.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right lines -> do

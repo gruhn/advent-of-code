@@ -31,7 +31,7 @@ chunksOf n as = take n as : chunksOf n (drop n as)
 
 main :: IO ()
 main = do
-  triangles <- parseHardError parser <$> readFile "2016/input/03.txt"
+  triangles <- parseHardError parser <$> readFile "input/03.txt"
 
   putStr "Part 1: "
   print 

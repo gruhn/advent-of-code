@@ -43,7 +43,7 @@ bingoScore (lastDraw, board) =
 
 main :: IO ()
 main = do
-    input <- readFile "2021/04-input.txt"
+    input <- readFile "input/04.txt"
     let (draws, boards) = parseInput input
     let bingos = bingosInOrder draws boards
     putStr "Part 1:"

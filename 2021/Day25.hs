@@ -26,7 +26,7 @@ show' (Grid grid, bounds) =
 
 main :: IO ()
 main = do
-    input <- parseFromFile (gridP cellP) "2021/25-input.txt"
+    input <- parseFromFile (gridP cellP) "input/25.txt"
     let gwb = do  
             (Grid grid) <- input
             return
@@ -40,7 +40,6 @@ main = do
     --     Right x -> unlines $ map show' x
     --     Left _ -> "error"
     print $ length . converge step <$> gwb
-    putStr "Part 2: "
 
 converge :: Eq a => (a -> a) -> a -> [a]
 converge f a 

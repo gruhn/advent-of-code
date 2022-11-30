@@ -38,7 +38,7 @@ notDiagonal (Line (x1, y1) (x2, y2)) = x1 == x2 || y1 == y2
 
 main :: IO ()
 main = do
-    input <- readFile "2021/05-input.txt"
+    input <- readFile "input/05.txt"
     let lines = parseInput input
     putStr "Part 1: "
     print $ fmap (countOverlaps . filter notDiagonal) lines

@@ -82,7 +82,7 @@ nextStates (free_position, positions) = do
 
 main :: IO ()
 main = do
-  nodes <- parseHardError parser <$> readFile "2016/input/22.txt"
+  nodes <- parseHardError parser <$> readFile "input/22.txt"
 
   putStr "Part 1: "
   let viable_pairs = viablePairs nodes

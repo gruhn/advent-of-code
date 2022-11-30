@@ -42,7 +42,7 @@ showLayer pixels =
 
 main :: IO ()
 main = do
-    input <- parse (layers 25 6) "" <$> readFile "2019/input/08.txt"
+    input <- parse (layers 25 6) "" <$> readFile "input/08.txt"
     case input of
         Left error   -> putStr (errorBundlePretty error)
         Right layers -> do

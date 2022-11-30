@@ -64,7 +64,7 @@ apply2 grid (Toggle p1 p2) =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/06.txt"
+    input <- parse parser "" <$> readFile "input/06.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right input -> do

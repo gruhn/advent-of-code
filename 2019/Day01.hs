@@ -17,7 +17,7 @@ compoundFuel =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/01.txt"
+    input <- parse parser "" <$> readFile "input/01.txt"
 
     putStr "Part 1: "
     print $ sum . map fuel <$> input

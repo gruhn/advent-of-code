@@ -82,7 +82,7 @@ parser = range `sepBy` newline
 
 main :: IO ()
 main = do
-  ranges <- parseHardError parser <$> readFile "2016/input/20.txt"
+  ranges <- parseHardError parser <$> readFile "input/20.txt"
 
   let blocked_ips = mconcat ranges
       allowed_ips = invert blocked_ips

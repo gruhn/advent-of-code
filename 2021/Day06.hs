@@ -7,7 +7,7 @@ natP = read <$> many1 digit
 
 main :: IO ()
 main = do
-    ages <- parseFromFile (natP `sepBy` char ',') "2021/06-input.txt"
+    ages <- parseFromFile (natP `sepBy` char ',') "input/06.txt"
     putStr "Part 1: "
     print $ sum . map (descendantCount 80) <$> ages
     putStr "Part 2: "

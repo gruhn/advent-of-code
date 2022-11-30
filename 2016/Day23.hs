@@ -7,7 +7,7 @@ import Data.Function ((&))
 
 main :: IO ()
 main = do
-  program <- parseHardError parser <$> readFile "2016/input/23.txt"
+  program <- parseHardError parser <$> readFile "input/23.txt"
 
   print program
 

@@ -6,7 +6,7 @@ parseInput = map read . splitOn ","
 
 main :: IO ()
 main = do
-    input <- parseInput <$> readFile "2021/07-input.txt"
+    input <- parseInput <$> readFile "input/07.txt"
     putStr "Part 1: "
     print $ minimize cost1 input
     putStr "Part 2: "

@@ -9,7 +9,7 @@ parse = fromNestedList . map (map digitToInt) . lines
 
 main :: IO ()
 main = do
-    input <- parse <$> readFile "2021/11-input.txt"
+    input <- parse <$> readFile "input/11.txt"
     putStr "Part 1: "
     print $ sum $ map fst $ take 101 $ iterateStep input
     putStr "Part 2: "

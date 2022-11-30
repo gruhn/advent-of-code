@@ -31,7 +31,7 @@ takeOdd = takeEven . tail
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/03.txt"
+    input <- parse parser "" <$> readFile "input/03.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right dirs -> do

@@ -55,7 +55,7 @@ parse = fmap go
 
 main :: IO ()
 main = do
-  moves <- fmap parse . lines <$> readFile "2016/input/02.txt"
+  moves <- fmap parse . lines <$> readFile "input/02.txt"
 
   putStr "Part 1: "
   print $ keyPad1CodeAt <$> codesWith move1 (1,1) moves

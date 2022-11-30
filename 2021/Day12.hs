@@ -25,7 +25,7 @@ parseEdge _     = Nothing
 
 main :: IO ()
 main = do
-    caveSystem <- parse <$> readFile "2021/12-input.txt"
+    caveSystem <- parse <$> readFile "input/12.txt"
     putStr "Part 1: "
     print $ fmap (length . paths1) caveSystem 
     putStr "Part 2: "

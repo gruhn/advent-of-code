@@ -66,7 +66,7 @@ getOutput owner_map bin = M.lookup (Bin bin) owner_map
 
 main :: IO ()
 main = do
-  instructions <- parseHardError parser <$> readFile "2016/input/10.txt"
+  instructions <- parseHardError parser <$> readFile "input/10.txt"
 
   let (owner_map, _) = converge apply (mempty, instructions)
 

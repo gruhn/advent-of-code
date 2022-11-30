@@ -103,7 +103,7 @@ magnitude (Node left right)
 
 main :: IO ()
 main = do
-    input <- parseFromFile (snailfish `sepBy` newline) "2021/18-input.txt"
+    input <- parseFromFile (snailfish `sepBy` newline) "input/18.txt"
     putStr "Part 1: "
     print $ magnitude . foldl1 add <$> input
     putStr "Part 2: "

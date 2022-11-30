@@ -66,7 +66,7 @@ rejectRed value = value
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/12.json"
+    input <- parse parser "" <$> readFile "input/12.json"
     case input of
         Left err -> putStr (errorBundlePretty err)
         Right input -> do

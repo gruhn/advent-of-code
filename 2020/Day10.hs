@@ -33,7 +33,7 @@ solver jolts = do
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2020/input/10.txt"
+    input <- parse parser "" <$> readFile "input/10.txt"
     case input of 
         Left error -> putStr (errorBundlePretty error)
         Right parsed -> solver parsed

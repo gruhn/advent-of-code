@@ -24,7 +24,7 @@ rule = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "2021/14-input.txt"
+    inputRaw <- readFile "input/14.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
     let results = do
             (template, rules) <- parsed

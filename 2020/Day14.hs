@@ -72,7 +72,7 @@ eval2 (memory, _) (Mask mask) =
 
 main :: IO ()
 main = do
-    input <- parseFromFile parser "2020/input/14.txt"
+    input <- parseFromFile parser "input/14.txt"
 
     putStr "Part 1: "
     let initState = (Map.empty, replicate 36 'X')

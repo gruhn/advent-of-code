@@ -131,7 +131,7 @@ dims grid = (length (head grid), length grid)
     
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2020/input/20.txt"
+    input <- parse parser "" <$> readFile "input/20.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right tiles -> do

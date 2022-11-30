@@ -52,7 +52,7 @@ manhattanDist = sum . map abs
 
 main :: IO ()
 main = do
-    input <- parseFromFile (move `sepBy` newline) "2020/input/12.txt"
+    input <- parseFromFile (move `sepBy` newline) "input/12.txt"
 
     putStr "Part 1: "
     print $ manhattanDist . snd . 

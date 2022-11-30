@@ -28,7 +28,7 @@ feedbackLoop program phaseSetting =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/07.txt"
+    input <- parse parser "" <$> readFile "input/07.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right program -> do

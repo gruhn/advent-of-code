@@ -22,7 +22,7 @@ import Lens.Micro.Extras (view)
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/09.txt"
+    input <- parse parser "" <$> readFile "input/09.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right program -> do

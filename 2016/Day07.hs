@@ -55,7 +55,7 @@ supportsSSL (bracket_segments, naked_segments) = not . null $ do
 
 main :: IO ()
 main = do 
-  ips <- parseHardError parser <$> readFile "2016/input/07.txt"
+  ips <- parseHardError parser <$> readFile "input/07.txt"
 
   putStr "Part 1: "
   print $ length $ filter supportsTLS ips 

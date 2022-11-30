@@ -17,7 +17,7 @@ parseGrid = listArrayInt . map parseRow . lines
 
 main :: IO ()
 main = do
-    grid <- parseGrid <$> readFile "2021/09-input.txt"
+    grid <- parseGrid <$> readFile "input/09.txt"
     putStr "Part 1: "
     print $ part1 grid
     putStr "Part 2: "

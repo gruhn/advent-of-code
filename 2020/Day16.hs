@@ -110,5 +110,5 @@ fromEither (Left a) = a
 fromEither (Right a) = a
 
 main :: IO ()
-main = parseFromFile parser "2020/input/16.txt" 
+main = parseFromFile parser "input/16.txt" 
     >>= fromEither . bimap print solve

@@ -94,7 +94,7 @@ applyInstr (RotateCol x shift) display = display { pixels = new_pixels }
 
 main :: IO ()
 main = do
-  instructions <- parseHardError parser <$> readFile "2016/input/08.txt"
+  instructions <- parseHardError parser <$> readFile "input/08.txt"
 
   let display_initial = Display mempty 50 6
       display_final   = foldl' (flip applyInstr) display_initial instructions

@@ -54,7 +54,7 @@ stepDist target = length . takeWhile (/= target)
 
 main :: IO ()
 main = do 
-    input <- parse parser "" <$> readFile "2019/input/03.txt"
+    input <- parse parser "" <$> readFile "input/03.txt"
 
     case input of
         Left error -> putStr (errorBundlePretty error)

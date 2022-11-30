@@ -82,7 +82,7 @@ spiralOrder =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/10.txt"
+    input <- parse parser "" <$> readFile "input/10.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right points -> do

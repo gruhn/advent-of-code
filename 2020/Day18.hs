@@ -48,7 +48,7 @@ eval (Parens x) = eval x
 
 main :: IO ()
 main = do
-    input <- readFile "2020/input/18.txt"
+    input <- readFile "input/18.txt"
 
     putStr "Part 1: "
     print $ sum . map eval <$> 

@@ -42,7 +42,7 @@ insideInitArea (Cuboid (x0,xn) (y0,yn) (z0,zn)) =
 
 main :: IO ()
 main = do
-    instructions <- parseFromFile (cuboidP `sepBy` newline) "2021/22-input.txt"
+    instructions <- parseFromFile (cuboidP `sepBy` newline) "input/22.txt"
     let resultVolume = sum . map volume . foldl applyInst []
     putStr "Part 1: "
     print $ resultVolume . filter (insideInitArea . snd) <$> instructions

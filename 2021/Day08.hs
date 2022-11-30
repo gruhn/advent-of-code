@@ -16,7 +16,7 @@ parse = mapM parseLine . lines
 
 main :: IO ()
 main = do
-    input <- readFile "2021/08-input.txt"
+    input <- readFile "input/08.txt"
     let decoded = decode input
     putStr "Part 1: "
     print $ length . filter (`elem` [1,4,7,8]) . concat <$> decoded

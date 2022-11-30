@@ -1,4 +1,4 @@
-module Day19 where
+module Main where
 import Text.Megaparsec (Parsec, sepEndBy, choice, chunk, MonadParsec (lookAhead, try), eof, someTill)
 import Text.Megaparsec.Char ( letterChar, newline, string )
 import qualified Data.Map as Map
@@ -133,7 +133,7 @@ prune target (Node rh rbs) = Node rh (catMaybes $ go target <$> rbs)
 
 main :: IO ()
 main = do
-    (rules, target_word) <- parseHardError inputParser <$> readFile "2015/input/19.txt"
+    (rules, target_word) <- parseHardError inputParser <$> readFile "input/19.txt"
 
     let rule_heads = distinct $ fst <$> rules
         target_word_tokenized = parseHardError (tokenizer rule_heads) target_word

@@ -20,7 +20,7 @@ middle list =
 
 main :: IO ()
 main = do
-    parsed <- map parseLine . lines <$> readFile "2021/10-input.txt"
+    parsed <- map parseLine . lines <$> readFile "input/10.txt"
     putStr "Part 1: "
     print $ sum . map incorrectCharScore . filter isIncorrect $ parsed
     putStr "Part 2: "

@@ -134,7 +134,7 @@ inverse (Move x y) = Move y x
 
 main :: IO ()
 main = do
-  ops <- parseHardError parser <$> readFile "2016/input/21.txt"
+  ops <- parseHardError parser <$> readFile "input/21.txt"
 
   putStr "Part 1: "
   print $ foldl' apply (S.fromList "abcdefgh") ops

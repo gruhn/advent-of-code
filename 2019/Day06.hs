@@ -27,7 +27,7 @@ path dict = go [] where
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2019/input/06.txt"
+    input <- parse parser "" <$> readFile "input/06.txt"
     case input of 
         Left error -> putStr (errorBundlePretty error)
         Right dict -> do

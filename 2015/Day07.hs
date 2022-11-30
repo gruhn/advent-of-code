@@ -89,7 +89,7 @@ reduceAt (Id i) circuit =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/07.txt"
+    input <- parse parser "" <$> readFile "input/07.txt"
     case input of 
         Left error -> putStr (errorBundlePretty error)
         Right input -> do

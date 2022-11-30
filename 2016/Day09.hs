@@ -57,7 +57,7 @@ deepLength = sum . fmap go
 
 main :: IO ()
 main = do
-  input <- parseHardError parser <$> readFile "2016/input/09.txt"
+  input <- parseHardError parser <$> readFile "input/09.txt"
 
   putStr "Part 1: "
   print $ flatLength input

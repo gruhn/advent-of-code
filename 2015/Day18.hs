@@ -38,7 +38,7 @@ step2 (width,height) grid =
 
 main :: IO ()
 main = do
-    input <- parse parser "" <$> readFile "2015/input/18.txt"
+    input <- parse parser "" <$> readFile "input/18.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right pointList -> do

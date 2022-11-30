@@ -36,7 +36,7 @@ nextRow = convolute 3 go '.'
 
 main :: IO ()
 main = do
-  input <- readFile "2016/input/18.txt"
+  input <- readFile "input/18.txt"
 
   putStr "Part 1: "
   let rows_1 = take 40 $ iterate nextRow input

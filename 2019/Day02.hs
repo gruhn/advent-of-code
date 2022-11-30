@@ -70,7 +70,7 @@ solve program = do
 
 main :: IO ()
 main = do 
-    input <- parse parser "" <$> readFile "2019/input/02.txt"
+    input <- parse parser "" <$> readFile "input/02.txt"
     case input of
         Left error -> putStr (errorBundlePretty error)
         Right program -> solve program

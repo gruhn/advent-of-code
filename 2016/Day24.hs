@@ -116,7 +116,7 @@ showPath open_tiles path = unlines (concatMap show_tile_at <$> points2D')
 
 main :: IO ()
 main = do
-  tiles <- tileMap <$> readFile "2016/input/24.txt"
+  tiles <- tileMap <$> readFile "input/24.txt"
 
   let start = head . M.keys . M.filter (Start ==) $ tiles
       goals = M.keys $ goalTiles tiles

@@ -58,7 +58,7 @@ parse = Set.fromList
 
 main :: IO ()
 main = do
-    input <- parse <$> readFile "2020/input/17.txt"
+    input <- parse <$> readFile "input/17.txt"
 
     putStr "Part 1: "
     print $ length . steps 6 $ Set.map (++ [0]) input

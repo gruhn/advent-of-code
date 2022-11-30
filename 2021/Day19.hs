@@ -121,7 +121,7 @@ manhattanDist v w =
 
 main :: IO ()
 main = do
-    input <- parseFromFile inputP "2021/19-input.txt"
+    input <- parseFromFile inputP "input/19.txt"
 
     case input of
         Left err -> print err

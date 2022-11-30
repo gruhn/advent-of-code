@@ -54,7 +54,7 @@ decrypt shift str = decryptChar <$> str
 
 main :: IO ()
 main = do
-  rooms <- parseHardError parser <$> readFile "2016/input/04.txt"
+  rooms <- parseHardError parser <$> readFile "input/04.txt"
 
   putStr "Part 1: "
   let valid_rooms = filter isValidRoom rooms

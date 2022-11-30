@@ -52,7 +52,7 @@ puzzleInput = do
 
 main :: IO ()
 main = do
-    inputRaw <- readFile "2021/20-input.txt"
+    inputRaw <- readFile "input/20.txt"
     let parsed = parse (puzzleInput <* eof) "" inputRaw
         result = do 
             (algo, plane) <- parsed

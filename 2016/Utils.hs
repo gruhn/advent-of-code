@@ -2,7 +2,6 @@ module Utils where
 
 import Text.Megaparsec (Parsec, parse, errorBundlePretty)
 import Data.Void (Void)
-import qualified Data.Set as S
 
 type Parser = Parsec Void String
 
