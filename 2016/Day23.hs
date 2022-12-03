@@ -1,21 +1,16 @@
 module Main where
 import Utils (parseHardError)
 import qualified Data.Map as M
-import Interpreter (parser, run, eval, State (getMemory, State, getPointer))
-import Data.Foldable (for_)
-import Data.Function ((&))
+import Interpreter (parser, run, State (getMemory))
 
 main :: IO ()
 main = do
-  program <- parseHardError parser <$> readFile "input/23.txt"
+  program <- parseHardError parser <$> readFile "input/23_manually_optimized.txt"
 
-  print program
+  let get_result = (M.! 'a') . getMemory . last
 
   putStr "Part 1: "
-  print $ last $ run program (M.singleton 'a' 7)
+  print $ get_result $ run program (M.singleton 'a' 7)
 
   putStr "Part 2: "
-  let f s = getPointer s == 16 && (getMemory s M.! 'c' <= length program)
-  print $ take 10 
-    $ filter f
-    $ run program (M.singleton 'a' 12)
+  print $ get_result $ run program (M.singleton 'a' 12)

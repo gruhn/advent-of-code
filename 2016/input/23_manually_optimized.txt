@@ -1,19 +1,19 @@
 cpy a b
 dec b
 cpy a d
-cpy 0 a
-cpy b c
-inc a
-dec c
-jnz c -2
-dec d
-jnz d -5
+cpy b a
+mul d a
+cpy 0 d
+cpy 0 c
+cpy 0 0
+cpy 0 0
+cpy 0 0
 dec b
 cpy b c
 cpy c d
-dec d
-inc c
-jnz d -2
+add d c
+cpy 0 d
+cpy 0 0
 tgl c
 cpy -16 c
 jnz 1 c
