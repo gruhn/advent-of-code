@@ -4,12 +4,10 @@ import Text.Megaparsec (sepBy, some, anySingleBut, skipSome, manyTill, anySingle
 import Text.Megaparsec.Char (newline, hspace, char, letterChar, string)
 import Text.Megaparsec.Char.Lexer (lexeme, decimal)
 import Control.Monad (void, guard)
-import Data.Foldable (maximumBy, find, Foldable (toList))
+import Data.Foldable (maximumBy, find, Foldable (toList), for_)
 import Data.Function (on, (&))
-import qualified Data.Map as M
-import qualified Data.List as L
 import qualified Data.Set as S
-import Algorithm.Search (aStar, dijkstra)
+import Algorithm.Search (dijkstra)
 import Data.Maybe (fromJust)
 
 type Pos = (Int, Int)
@@ -62,23 +60,34 @@ viablePairs nodes = do
   guard (usedTerabyte a <= availTerabyte b)
   return (a,b)
 
-manhattanDistance :: Pos -> Pos -> Int
-manhattanDistance (x1,y1) (x2,y2) = abs (x1 - x2) + abs (y1 - y2)
+type Swap = (Pos,Pos)
 
-type State = (Pos, M.Map Pos Node)
+findSwapPath :: S.Set Pos -> Pos -> Pos -> Pos -> Maybe [Swap]
+findSwapPath viable_positions source target free = direct_path >>= go source free
+  where
+    neighbors :: S.Set Pos -> Pos -> [Pos]
+    neighbors viable_positions (x,y) = do
+      pos <- [ (x+1,y), (x-1,y), (x,y+1), (x,y-1) ]
+      guard (pos `S.member` viable_positions)
+      return pos
 
-nextStates :: State -> [State]
-nextStates (free_position, positions) = do
-  let (x,y) = free_position
-  neighbor <- [ (x+1,y), (x-1,y), (x,y+1), (x,y-1) ]
-  guard (neighbor `M.member` positions)
+    step_cost _ _ = 1
+  
+    direct_path = snd <$> dijkstra (neighbors viable_positions) step_cost (==target) source
 
-  let node = positions M.! neighbor
-      positions' = positions
-        & M.delete neighbor
-        & M.insert free_position node
-
-  return (neighbor, positions')
+    go :: Pos -> Pos -> [Pos] -> Maybe [Swap]
+    go current free_pos [] = Just []
+    go current free_pos (next:path) = do 
+      -- force path to go around `current`
+      let viable = S.delete current viable_positions
+      -- bring `free_node` in front of `data_node`
+      free_path <- snd <$> dijkstra (neighbors viable) step_cost (==next) free_pos
+      let free_path_swaps = zip free_path (free_pos:free_path) 
+      -- swap `data_node` for `next` (where `free_node` is now)
+      let data_swap = (current, next)
+      -- continue with `free_pos` as the old `current` and the new `current` is `next`
+      rest_swaps <- go next current path
+      return $ free_path_swaps <> [data_swap] <> rest_swaps
 
 main :: IO ()
 main = do
@@ -88,31 +97,13 @@ main = do
   let viable_pairs = viablePairs nodes
   print $ length viable_pairs
 
-  let viable_nodes = fst <$> viable_pairs
-
-      Just free_position = position <$> find ((== 0) . usedTerabyte) nodes
-      grid_positions = M.fromList $ (\node -> (position node, node)) <$> viable_nodes
-
-      initial_state :: State
-      initial_state = (free_position, grid_positions)
-
-      transition_cost _ _ = 1
-
-      target_pos = (0,0)
-      source_pos = maximumBy (compare `on` snd) $ filter ((==0) . fst)
-        $ M.keys grid_positions
-
-      cost_lower_bound :: State -> Int
-      cost_lower_bound (free_position, positions) = 
-        manhattanDistance (0,0) free_position + manhattanDistance free_position source_pos_current
-        where
-          source_pos_current = fst $ fromJust $ find ((== source_pos) . position . snd) $ M.toList positions
-
-      is_final_state :: State -> Bool
-      is_final_state (_, positions) =
-        case M.lookup (0,0) positions of
-          Just node -> position node == source_pos
-          Nothing   -> False
-
   putStr "Part 2: "
-  print $ aStar nextStates transition_cost cost_lower_bound is_final_state initial_state
+  let viable_nodes = fst <$> viable_pairs
+      Just free_node = find ((== 0) . usedTerabyte) nodes
+
+      viable_poses = S.fromList $ position <$> (free_node : viable_nodes)
+      free_pos = position free_node
+      target_pos = (0,0)
+      source_pos = maximumBy (compare `on` fst) $ S.filter ((==0) . snd) viable_poses
+
+  print $ length <$> findSwapPath viable_poses source_pos target_pos free_pos
