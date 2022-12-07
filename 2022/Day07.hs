@@ -6,17 +6,13 @@ import Text.Megaparsec.Char ( string, newline, char )
 import Control.Applicative ( some, (<|>), many )
 import qualified Data.Map as M
 import Control.Arrow (first)
-import Data.List (partition, sortOn, groupBy)
+import Data.List (partition, sortOn, groupBy, stripPrefix)
 import Data.Foldable (for_)
 
-data OutputLine =
-    DirLine String
-  | FileLine Int String
+data File = File { bytes :: Int, fileName :: String }
   deriving Show
 
-data Cmd =
-    Cd String
-  | Ls [OutputLine]
+data Cmd = Cd String | Ls [File]
   deriving Show
 
 parser :: Parser [Cmd]
@@ -25,83 +21,48 @@ parser = many cmd
     file_name :: Parser String
     file_name = some (noneOf " \n")
 
-    output_lines :: Parser [OutputLine]
-    output_lines = (file <|> dir) `sepEndBy` newline
+    files :: Parser [File]
+    files = (file <|> dir) `sepEndBy` newline
 
-    file = FileLine <$> decimal <* string " " <*> file_name
-    dir  = DirLine <$ string "dir " <*> file_name
+    file = File <$> decimal <* string " " <*> file_name
+    dir = File 0 <$ string "dir " <*> file_name
 
     cmd :: Parser Cmd
     cmd = string "$ " *> (cd <|> ls)
 
     cd = Cd <$ string "cd " <*> file_name <* newline
-    ls = Ls <$ string "ls" <* newline <*> output_lines
-
-data FileTree = Dir (M.Map String FileTree) | File Int
-  deriving Show
+    ls = Ls <$ string "ls\n" <*> files
 
 type Path = [String]
 
-collectFiles :: [Cmd] -> M.Map Path Int
-collectFiles = M.mapKeys reverse . from_commands []
-  where
-    from_commands :: Path -> [Cmd] -> M.Map Path Int
-    from_commands path [] = M.empty
-    from_commands path (cmd : cmds) = 
-      case (cmd, path) of
-        (Cd "..", [])        -> from_commands [] cmds
-        (Cd "..", dir:path') -> from_commands path' cmds
-        (Cd dir, _)          -> from_commands (dir:path) cmds
-        (Ls lines, _)        -> M.union (from_outputs path lines) (from_commands path cmds)
-
-    from_outputs :: Path -> [OutputLine] -> M.Map Path Int
-    from_outputs path lines = M.fromList $ do
-      line <- lines
-      case line of
-        DirLine _ -> []
-        FileLine size name -> [(name:path, size)]
-
-singleton :: Path -> Int -> FileTree
-singleton []         bytes = File bytes
-singleton (dir:path) bytes = 
-  Dir $ M.singleton dir $ singleton path bytes
-
-merge :: FileTree -> FileTree -> FileTree
-merge (File bytes) (File _) = File bytes -- file overwrite
-merge (Dir files) (Dir files') = Dir $ M.unionWith merge files files'
-merge _ _ = error "tried to insert file into non-directory"
-
-fileTree :: M.Map Path Int -> FileTree
-fileTree = foldr merge (Dir M.empty) . fmap (uncurry singleton) . M.toList
-
-dirSizes :: FileTree -> M.Map [String] Int
+dirSizes :: [Cmd] -> M.Map Path Int
 dirSizes = M.mapKeys reverse . go []
   where
-    is_file (File _) = True
-    is_file _ = False
+    is_direct_sub_dir :: Path -> Path -> Bool
+    is_direct_sub_dir path (dir:path') = path == path'
+    is_direct_sub_dir _ _ = False
 
-    get_size (File bytes) = bytes
-    get_size _ = 0
+    direct_sub_dirs :: Path -> M.Map Path Int -> M.Map Path Int
+    direct_sub_dirs path = M.filterWithKey (\sub_path _ -> path `is_direct_sub_dir` sub_path)
 
-    go :: [String] -> FileTree -> M.Map [String] Int
-    go path (File _) = M.empty
-    go path (Dir files) = M.insert path dir_size sizes'
-      where
-        sizes' = M.unionsWith (+) $ M.mapWithKey (\name dir -> go (name:path) dir) sub_dirs
-
-        (sub_files, sub_dirs) = M.partition is_file files
-
-        direct_child_sizes = (sizes' M.!) . (:path) <$> M.keys sub_dirs
-
-        dir_size = sum direct_child_sizes + sum (get_size <$> sub_files)
+    go :: Path -> [Cmd] -> M.Map Path Int
+    go path [] = M.empty
+    go path (cmd : cmds) = 
+      case (cmd, path) of 
+        (Cd "..", []) -> go [] cmds
+        (Cd "..", dir:path') -> go path' cmds
+        (Cd dir, _) -> go (dir:path) cmds
+        (Ls files, _) -> M.insert path (file_sizes + dir_sizes) path_map 
+          where
+            path_map = go path cmds
+            file_sizes = sum (bytes <$> files)
+            dir_sizes = sum (direct_sub_dirs path path_map)
 
 main :: IO ()
 main = do
   input <- parseHardError parser <$> readFile "input/07.txt"
 
-  let dir_sizes = dirSizes $ fileTree $ collectFiles input
-
-  for_ (M.toList dir_sizes) print
+  let dir_sizes = dirSizes input
 
   putStr "Part 1: "
   print $ sum $ filter (<= 100000) $ M.elems dir_sizes
