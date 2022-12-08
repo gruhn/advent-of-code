@@ -29,3 +29,9 @@ takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil p []     = []
 takeUntil p (a:as) = 
   a : if p a then [] else takeUntil p as
+
+zipWith2D :: (a -> b -> c) -> [[a]] -> [[b]] -> [[c]]
+zipWith2D f = zipWith (zipWith f)
+
+count :: (a -> Bool) -> [a] -> Int
+count p = length . filter p
