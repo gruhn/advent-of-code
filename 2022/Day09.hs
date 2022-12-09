@@ -41,23 +41,21 @@ neighborhoodOf (x,y) = S.fromList
 closestTo :: S.Set Pos -> Pos -> Pos
 closestTo options target = minimumBy (compare `on` distance target) options
   where
-    distance :: Pos -> Pos -> Float
-    distance (x,y) (x',y') = 
-        (fromIntegral x - fromIntegral x')^2 
-      + (fromIntegral y - fromIntegral y')^2
+    distance :: Pos -> Pos -> Int
+    distance (x1,y1) (x2,y2) = (x1-x2)^2 + (y1-y2)^2
 
-moveTail :: Pos -> Pos -> Pos
-moveTail successor_pos pos
-  | pos `elem` neighborhoodOf successor_pos = pos
-  | otherwise = valid_positions `closestTo` successor_pos 
+follow :: Pos -> Pos -> Pos
+follow pos successor 
+  | pos `elem` neighborhoodOf successor = pos
+  | otherwise = valid_positions `closestTo` successor
     where
-      valid_positions = neighborhoodOf successor_pos `S.intersection` neighborhoodOf pos
+      valid_positions = neighborhoodOf successor `S.intersection` neighborhoodOf pos
 
 step :: (Pos, [Pos]) -> Move -> (Pos, [Pos])
 step (head_pos, tail_poses) move = (new_head_pos, new_tail_poses)
   where
     new_head_pos = moveHead head_pos move
-    new_tail_poses = tail $ scanl' moveTail new_head_pos tail_poses
+    new_tail_poses = tail $ scanl' (flip follow) new_head_pos tail_poses
 
 main :: IO ()
 main = do
