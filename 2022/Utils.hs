@@ -35,3 +35,8 @@ zipWith2D f = zipWith (zipWith f)
 
 count :: (a -> Bool) -> [a] -> Int
 count p = length . filter p
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf n [] = []
+chunksOf n as = 
+  take n as : chunksOf n (drop n as)

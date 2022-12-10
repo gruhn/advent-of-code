@@ -2,17 +2,13 @@ module Main where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
+import Utils (chunksOf)
 
 splitMiddle :: [a] -> [[a]]
 splitMiddle as = [front, rear]
   where
     middle = length as `div` 2
     (front, rear) = splitAt middle as
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf n [] = []
-chunksOf n as = 
-  take n as : chunksOf n (drop n as)
 
 intersection :: Ord a => [[a]] -> [a]
 intersection []  = []
