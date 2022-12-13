@@ -16,19 +16,15 @@ instance Ord Packet where
   -- If the left integer is lower than the right integer, the inputs are in the right order. 
   -- If the left integer is higher than the right integer, the inputs are not in the right order. 
   -- Otherwise, the inputs are the same integer; continue checking the next part of the input.
-  Val l <= Val r = l <= r
+  compare (Val l) (Val r) = compare l r
+  -- If exactly one value is an integer, convert the integer to a list which contains that integer as its only value, then retry the comparison. 
+  compare (Val l) (List rs) = compare (List [Val l]) (List rs)
+  compare (List ls) (Val r) = compare (List ls) (List [Val r])
   -- If both values are lists, compare the first value of each list, then the second value, and so on. 
   -- If the left list runs out of items first, the inputs are in the right order. 
   -- If the right list runs out of items first, the inputs are not in the right order. 
   -- If the lists are the same length and no comparison makes a decision about the order, continue checking the next part of the input.
-  List [] <= List rs = True
-  List ls <= List [] = False
-  List (l:ls) <= List (r:rs) 
-    | l <= r && r <= l = List ls <= List rs
-    | otherwise        = l <= r
-  -- If exactly one value is an integer, convert the integer to a list which contains that integer as its only value, then retry the comparison. 
-  Val l <= List rs = List [Val l] <= List rs
-  List ls <= Val r = List ls <= List [Val r]
+  compare (List ls) (List rs) = compare ls rs
 
 parser :: Parser [(Packet, Packet)]
 parser = pair `sepBy` count 2 newline
@@ -56,11 +52,11 @@ main = do
     return index
 
   putStr "Part 2: "
-  let (left_packets, right_packets) = unzip input
-
-      divider_packet1 = List [List [Val 2]]
+  let divider_packet1 = List [List [Val 2]]
       divider_packet2 = List [List [Val 6]]
 
+      (left_packets, right_packets) = unzip input
+      
       all_packets = sort $ [divider_packet1, divider_packet2] <> left_packets <> right_packets
 
   print $ do 
