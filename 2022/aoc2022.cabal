@@ -86,3 +86,11 @@ executable day13
                     , containers
     default-language: Haskell2010
     other-modules:    Utils
+
+executable day14
+    main-is:          Day14.hs
+    build-depends:    base >=4.14.3.0
+                    , megaparsec
+                    , containers
+    default-language: Haskell2010
+    other-modules:    Utils
