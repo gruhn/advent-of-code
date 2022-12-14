@@ -3,8 +3,8 @@ import Utils (Parser, parseHardError, converge)
 import Text.Megaparsec.Char.Lexer (decimal)
 import Text.Megaparsec.Char (newline, string, char)
 import Text.Megaparsec (sepBy)
-import qualified Data.Set as S
-import Data.Set (Set)
+import qualified Data.HashSet as S
+import Data.HashSet (HashSet)
 import Data.Foldable (find)
 
 type Point = (Int,Int)
@@ -20,7 +20,7 @@ parser = path `sepBy` newline
     point = (,) <$> decimal <* char ',' <*> decimal
 
 expandPath :: Path -> Path
-expandPath [] = [] 
+expandPath [] = []
 expandPath [p] = [p]
 expandPath (p1:p2:ps) = segment p1 p2 <> expandPath (p2:ps)
 
@@ -37,30 +37,27 @@ stepSand is_free (x,y) =
     []       -> (x,y)
     (next:_) -> next
 
-spawnSand :: (Point -> Bool) -> Set Point -> Set Point
-spawnSand is_rock sand = S.insert final_point sand
+spawnSand :: Point -> (Point -> Bool) -> HashSet Point -> HashSet Point
+spawnSand entry_point is_rock sand = S.insert final_point sand
   where
     is_free (x,y) = not (is_rock (x,y) || S.member (x,y) sand)
-
-    entry_point = (500,0)
     final_point = converge (stepSand is_free) entry_point
 
 main :: IO ()
 main = do
   rock_paths <- parseHardError parser <$> readFile "input/14.txt"
 
-  let rock_points = S.unions (S.fromList . expandPath <$> rock_paths)
+  let entry_point = (500, 0)
+      rock_points = S.unions (S.fromList . expandPath <$> rock_paths)
       floor_level = maximum (S.map snd rock_points) + 2
       is_rock point = S.member point rock_points || snd point == floor_level
 
+      all_steps = iterate (spawnSand entry_point is_rock) S.empty
+
   putStr "Part 1: "
   let at_floor_level point = snd point == floor_level - 1
-  print
-    $ fmap ((+ (-1)) . S.size)
-    $ find (any at_floor_level)
-    $ iterate (spawnSand is_rock) S.empty
+  print $ length (takeWhile (not . any at_floor_level) all_steps) - 1
 
   putStr "Part 2: "
-  print 
-    $ S.size 
-    $ converge (spawnSand is_rock) S.empty
+  let entry_not_blocked = not . S.member entry_point
+  print $ length (takeWhile entry_not_blocked all_steps)
