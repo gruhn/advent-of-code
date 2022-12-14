@@ -1,14 +1,11 @@
 module Main where
-import Utils (Parser, parseHardError, takeUntil, converge)
+import Utils (Parser, parseHardError, converge)
 import Text.Megaparsec.Char.Lexer (decimal)
 import Text.Megaparsec.Char (newline, string, char)
 import Text.Megaparsec (sepBy)
 import qualified Data.Set as S
 import Data.Set (Set)
-import Data.List (uncons, unfoldr)
-import Data.Foldable (maximumBy)
 import Data.Foldable (find)
-import Data.Maybe (isJust)
 
 type Point = (Int,Int)
 type Path = [Point]
@@ -16,55 +13,54 @@ type Path = [Point]
 parser :: Parser [Path]
 parser = path `sepBy` newline
   where
+    path :: Parser Path
     path = point `sepBy` string " -> "
+
+    point :: Parser Point
     point = (,) <$> decimal <* char ',' <*> decimal
 
 expandPath :: Path -> Path
 expandPath [] = [] 
-expandPath [point] = [point]
-expandPath ((x1,y1):(x2,y2):points) = segment_points <> rest_points
+expandPath [p] = [p]
+expandPath (p1:p2:ps) = segment p1 p2 <> expandPath (p2:ps)
+
+segment :: Point -> Point -> Path
+segment start@(x1,y1) end@(x2,y2) = takeWhile (/= end) $ iterate shift start
   where
     dx = signum (x1 - x2)
     dy = signum (y1 - y2)
-    add_shift (x,y) = (x-dx, y-dy)
+    shift (x,y) = (x-dx, y-dy)
 
-    segment_points = takeWhile (/=(x2,y2)) $ iterate add_shift (x1,y1) 
-    rest_points = expandPath ((x2,y2):points)
-    
-pathPoints :: [Path] -> Set Point
-pathPoints paths = S.unions (S.fromList . expandPath <$> paths)
+stepSand :: (Point -> Bool) -> Point -> Point
+stepSand is_free (x,y) =
+  case filter is_free [(x,y+1),(x-1,y+1),(x+1,y+1)] of
+    []       -> (x,y)
+    (next:_) -> next
 
-step :: (Point -> Bool) -> Point -> Maybe (Point, Point)
-step is_blocked (x,y) = do
-  (next, _) <- uncons $ filter (not . is_blocked) [(x,y+1),(x-1,y+1),(x+1,y+1)]
-  return (next, next)
-
-abyssLevel :: Set Point -> Int
-abyssLevel rock = 1 + maximum (S.map snd rock)
-
-spawnSand :: Point -> Set Point -> Set Point -> Set Point
-spawnSand entry rock sand = case sand_path of 
-  [] -> sand 
-  _ -> S.insert (last sand_path) sand
+spawnSand :: (Point -> Bool) -> Set Point -> Set Point
+spawnSand is_rock sand = S.insert final_point sand
   where
-    blocked = rock <> sand
+    is_free (x,y) = not (is_rock (x,y) || S.member (x,y) sand)
 
-    is_blocked (x,y) = 
-      y == abyss_level + 1 || S.member (x,y) blocked
-
-    sand_path = unfoldr (step is_blocked) entry
-
-    abyss_level = abyssLevel rock
-
-    -- falls_to_abyss = isJust $ find ((abyss_level <=) . snd) sand_path
-
-
+    entry_point = (500,0)
+    final_point = converge (stepSand is_free) entry_point
 
 main :: IO ()
 main = do
-  input <- parseHardError parser <$> readFile "input/14.txt"
+  rock_paths <- parseHardError parser <$> readFile "input/14.txt"
 
-  let entry = (500,0)
-  let rock = pathPoints input
+  let rock_points = S.unions (S.fromList . expandPath <$> rock_paths)
+      floor_level = maximum (S.map snd rock_points) + 2
+      is_rock point = S.member point rock_points || snd point == floor_level
 
-  print $ S.size $ converge (spawnSand entry rock) S.empty
+  putStr "Part 1: "
+  let at_floor_level point = snd point == floor_level - 1
+  print
+    $ fmap ((+ (-1)) . S.size)
+    $ find (any at_floor_level)
+    $ iterate (spawnSand is_rock) S.empty
+
+  putStr "Part 2: "
+  print 
+    $ S.size 
+    $ converge (spawnSand is_rock) S.empty
