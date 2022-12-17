@@ -1,6 +1,7 @@
 from pyscipopt import Model, quicksum
 import networkx as nx
 import re
+import time
 
 def solve(input, minutes, actors):
   graph = nx.DiGraph()
@@ -61,10 +62,19 @@ def solve(input, minutes, actors):
   model.optimize()
   return model.getObjVal()
 
+time_start = time.time()
+
 input = []
 for line in open("input/16.txt", "r").read().splitlines():
   node, rate, *neighbors = re.findall(r'([A-Z][A-Z]|[0-9]+)', line)
   input.append((node, int(rate), neighbors))
 
-print("Part 1 :", solve(input, 30, 1))
-print("Part 2 :", solve(input, 26, 2))
+part1 = solve(input, 30, 1)
+part2 = solve(input, 26, 2)
+
+print("Part 1 :", part1)
+print("Part 2 :", part2)
+
+time_end = time.time()
+
+print("Total Time: ", (time_end - time_start))
