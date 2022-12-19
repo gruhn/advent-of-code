@@ -69,7 +69,7 @@ main = do
   input <- parseHardError parser <$> readFile "input/15.txt"
 
   putStr "Part 1: "
-  -- print $ S.size $ p1 2000000 $ S.fromList input
+  print $ S.size $ p1 2000000 $ S.fromList input
 
   putStr "Part 2: "
 

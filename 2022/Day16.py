@@ -1,3 +1,5 @@
+# docker run --rm -it -v $(pwd):/home/user/scripts gruhn/scipsuite:8.0.3 python Day16.py
+
 from pyscipopt import Model, quicksum
 import networkx as nx
 import re

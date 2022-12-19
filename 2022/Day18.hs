@@ -63,10 +63,8 @@ trappedPoints points = final_trapped_points
         check_trapped pocket
           | not (S.disjoint free_points pocket)    = Left pocket
           | not (S.disjoint trapped_points pocket) = Right pocket
-          | pocket' == pocket                      = Right pocket
-          | otherwise                              = check_trapped pocket'
-          where
-            pocket' = grow pocket
+          | pocket == grow pocket                  = Right pocket
+          | otherwise                              = check_trapped (grow pocket)
 
 main :: IO ()
 main = do
