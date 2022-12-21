@@ -7,47 +7,36 @@
 :- use_module(utils, [ integer//1, word//1 ]).
 
 part1(Root) :-
-  input(VarDict, RootExpr, HumnExpr),
-  Root #= RootExpr,
-  Humn #= HumnExpr,
-  vars_var_value(VarDict, root, Root),
-  vars_var_value(VarDict, humn, Humn).
+  input(EqDict),
+  get_assoc(root, EqDict, Root #= _),
+  map_assoc(call, EqDict).
 
 part2(Humn) :-
-  input(VarDict, RootExpr, _),
-  RootExpr =.. [_, Var1, Var2],
-  Var1 #= Var2,
-  vars_var_value(VarDict, humn, Humn).
+  input(EqDict0),
+  del_assoc(humn, EqDict0, Humn #= _, EqDict1),
+  del_assoc(root, EqDict1, _ #= RootExpr, EqDict),
+  RootExpr =.. [_, Value1, Value2],
+  Value1 #= Value2,
+  map_assoc(call, EqDict).
 
-% Evalution
+% Evaluation
 
-input(VarDict, RootExpr, HumnExpr) :-
-  phrase_from_file(equations(Eqs0), "input/21.txt"),
+input(EqDict) :-
+  phrase_from_file(equations(VarEqPairs0), "input/21.txt"),
 
-  pairs_keys(Eqs0, VarNames),
-  pairs_keys(VarPairs, VarNames),
-  list_to_assoc(VarPairs, VarDict),
+  pairs_keys_values(VarEqPairs0, Vars, Eqs0),
+  pairs_keys(VarValuePairs, Vars),
+  list_to_assoc(VarValuePairs, ValueDict),
 
-  select(root-RootRHS, Eqs0, Eqs1),
-  select(humn-HumnRHS, Eqs1, Eqs2),
-  vars_rhs_expr(VarDict, RootRHS, RootExpr),
-  vars_rhs_expr(VarDict, HumnRHS, HumnExpr),
+  maplist(var_subst(ValueDict), Eqs0, Eqs),
+  pairs_keys_values(VarEqPairs, Vars, Eqs),
+  list_to_assoc(VarEqPairs, EqDict).
 
-  maplist(vars_equation_expr(VarDict), Eqs2, Eqs),
-  maplist(call, Eqs).
-
-vars_var_value(VarDict, VarName, Value) :-
-  get_assoc(VarName, VarDict, Value).
-
-vars_rhs_expr(_, #Int, #Int).
-vars_rhs_expr(VarDict, [Op, VarName1, VarName2], Expr) :-
-  vars_var_value(VarDict, VarName1, Value1),
-  vars_var_value(VarDict, VarName2, Value2),
-  Expr =.. [Op, Value1, Value2].
-
-vars_equation_expr(VarDict, VarName-RHS, Value #= Expr) :-
-  vars_var_value(VarDict, VarName, Value),
-  vars_rhs_expr(VarDict, RHS, Expr).
+var_subst(ValueDict, Term0, Term) :-
+  ( atom(Term0) -> get_assoc(Term0, ValueDict, Term) ) ; 
+  Term0 =.. [ Functor | SubTerms0 ],
+  maplist(var_subst(ValueDict), SubTerms0, SubTerms),
+  Term =.. [ Functor | SubTerms ].
 
 % Parsing
 
@@ -56,7 +45,9 @@ equations([E])    --> equation(E).
 
 variable(Name) --> word(Chars), { atom_chars(Name, Chars) }.
 
-equation(Var-RHS) --> variable(Var), ": ", equation_rhs(RHS).
+equation(Var-(Var #= RHS)) --> variable(Var), ": ", equation_rhs(RHS).
 
-equation_rhs(#Int)         --> integer(Int).
-equation_rhs([Op, V1, V2]) --> variable(V1), " ", [Op], " ", variable(V2).
+equation_rhs(#Int) --> integer(Int).
+equation_rhs(Term) --> 
+  variable(V1), " ", [Op], " ", variable(V2),
+  { Term =.. [Op, V1, V2] }.
