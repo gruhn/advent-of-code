@@ -5,7 +5,7 @@ import re
 import time
 from math import prod
 
-def solve(minutes, costs):
+def solve(last_minute, costs):
   [ 
     ore_robot_ore_cost, 
     clay_robot_ore_cost, 
@@ -17,7 +17,7 @@ def solve(minutes, costs):
 
   model = Model()
 
-  time_steps = range(0, minutes+1)
+  time_steps = range(0, last_minute+1)
 
   make_ore_robot = {}
   make_clay_robot = {}
@@ -27,7 +27,6 @@ def solve(minutes, costs):
   ore_budget = {}
   clay_budget = {}
   obsidian_budget = {}
-  geode_budget = {}
 
   for t in time_steps:
     make_ore_robot[t] = model.addVar(vtype="BINARY")
@@ -35,10 +34,9 @@ def solve(minutes, costs):
     make_obsidian_robot[t] = model.addVar(vtype="BINARY")
     make_geode_robot[t] = model.addVar(vtype="BINARY")
 
-    ore_budget[t] = model.addVar(vtype="INTEGER", lb=0, name=f"ore_budget_at_{t}")
-    clay_budget[t] = model.addVar(vtype="INTEGER", lb=0, name=f"clay_budget_at_{t}")
-    obsidian_budget[t] = model.addVar(vtype="INTEGER", lb=0, name=f"obsidian_budget_at_{t}")
-    geode_budget[t] = model.addVar(vtype="INTEGER", lb=0, name=f"geode_budget_at_{t}")
+    ore_budget[t] = model.addVar(vtype="INTEGER", name=f"ore_budget_at_{t}")
+    clay_budget[t] = model.addVar(vtype="INTEGER", name=f"clay_budget_at_{t}")
+    obsidian_budget[t] = model.addVar(vtype="INTEGER", name=f"obsidian_budget_at_{t}")
 
     # make at most one robot in each time step
     model.addCons(make_ore_robot[t] + make_clay_robot[t] + make_obsidian_robot[t] + make_geode_robot[t] <= 1)
@@ -53,7 +51,6 @@ def solve(minutes, costs):
     model.addCons(ore_budget[0] == 0)
     model.addCons(clay_budget[0] == 0)
     model.addCons(obsidian_budget[0] == 0)
-    model.addCons(geode_budget[0] == 0)
 
     if t > 0:
       ore_robot_count = quicksum(make_ore_robot[tt] for tt in time_steps if tt < t)
@@ -71,10 +68,8 @@ def solve(minutes, costs):
       model.addCons(spent_obsidian <= obsidian_budget[t-1])
       model.addCons(obsidian_budget[t] == obsidian_robot_count + obsidian_budget[t-1] - spent_obsidian)
 
-      geode_robot_count = quicksum(make_geode_robot[tt] for tt in time_steps if tt < t)
-      model.addCons(geode_budget[t] == geode_robot_count + geode_budget[t-1])
-  
-  model.setObjective(geode_budget[minutes], "maximize")
+  total_geodes = quicksum( make_geode_robot[t] * (last_minute-t) for t in time_steps )
+  model.setObjective(total_geodes, "maximize")
   model.optimize()
 
   # for t in time_steps:
@@ -89,7 +84,7 @@ def solve(minutes, costs):
   #   print(f"{obsidian_robot_count} obsidian-collecting robots; you now have {round(model.getVal(obsidian_budget[t]))} obsidian.")
   #   print(f"{geode_robot_count} geode-cracking robots; you now have {round(model.getVal(geode_budget[t]))} geodes.")
 
-  return model.getObjVal()
+  return model
 
 time_start = time.time()
 
@@ -100,17 +95,22 @@ for line in open("input/19.txt", "r").read().splitlines():
 
 part1 = []
 for (blueprint_id, costs) in input:
-  result = round(solve(24, costs))
-  part1.append(result*blueprint_id)
+  model = solve(24, costs)
+  part1.append((blueprint_id, model))
 
 part2 = []
-for (_, costs) in input[0:3]:
-  result = round(solve(32, costs))
-  part2.append(result)
+for (blueprint_id, costs) in input[0:3]:
+  model = solve(32, costs)
+  part2.append((blueprint_id, model))
 
-print("Part 1: ", sum(part1))
-print("Part 2: ", prod(part2))
+print("=== Part 1 ===")
+for (blueprint_id, model) in part1:
+  print(f"Blueprint {blueprint_id}: ObjVal = {round(model.getObjVal())}, Time = {model.getSolvingTime()}")
+print("Answer: ", sum( id*round(m.getObjVal()) for (id,m) in part1 ))
 
-time_end = time.time()
+print("=== Part 2 ===")
+for (blueprint_id, model) in part2:
+  print(f"Blueprint {blueprint_id}: ObjVal = {round(model.getObjVal())}, Time = {model.getSolvingTime()}")
+print("Answer: ", prod( round(m.getObjVal()) for (_,m) in part2 ))
 
-print("Total Time: ", (time_end - time_start))
+print("Total Time: ", time.time() - time_start)
