@@ -4,6 +4,7 @@ import Text.Megaparsec (Parsec, parse, errorBundlePretty)
 import Data.Void (Void)
 import qualified Data.Set as S
 import Data.Set (Set)
+import qualified Data.Map as M
 
 type Parser = Parsec Void String
 
@@ -42,12 +43,6 @@ chunksOf n [] = []
 chunksOf n as = 
   take n as : chunksOf n (drop n as)
 
-withCoordinates :: [[a]] -> [((Int,Int), a)]
-withCoordinates rows = do
-  (y, row)  <- zip [0..] rows
-  (x, cell) <- zip [0..] row
-  return ((x,y), cell)
-
 takeDistinct :: Ord a => [a] -> [a]
 takeDistinct = go S.empty 
   where
@@ -55,3 +50,15 @@ takeDistinct = go S.empty
     go seen (a:as)
       | S.member a seen = []
       | otherwise = a : go (S.insert a seen) as
+
+withCoordinates :: [[a]] -> [((Int,Int), a)]
+withCoordinates rows = do
+  (y, row)  <- zip [0..] rows
+  (x, cell) <- zip [0..] row
+  return ((x,y), cell)
+
+withCoords :: [[a]] -> [((Int,Int), a)]
+withCoords rows = do
+  (y, row)  <- zip [0..] rows
+  (x, cell) <- zip [0..] row
+  return ((x,y), cell)
