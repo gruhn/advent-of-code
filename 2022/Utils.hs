@@ -40,3 +40,9 @@ chunksOf :: Int -> [a] -> [[a]]
 chunksOf n [] = []
 chunksOf n as = 
   take n as : chunksOf n (drop n as)
+
+withCoordinates :: [[a]] -> [((Int,Int), a)]
+withCoordinates rows = do
+  (y, row)  <- zip [0..] rows
+  (x, cell) <- zip [0..] row
+  return ((x,y), cell)
