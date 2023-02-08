@@ -3,13 +3,13 @@ module Main where
 import Text.Megaparsec ( Parsec, sepBy )
 import Text.Megaparsec.Char ( char, newline )
 import Data.Void ( Void )
-import ParseUtils ( Parser, integer, parseHardError )
+import qualified ParseUtils as P
 import Data.List ( partition )
 
 type Vec = [Int]
 
-parser :: Parser [Vec]
-parser = (integer `sepBy` char ',') `sepBy` newline
+parser :: P.Parser [Vec]
+parser = (P.integer `sepBy` char ',') `sepBy` newline
 
 manhattanDist :: Vec -> Vec -> Int
 manhattanDist v w = sum $ map abs $ zipWith (-) v w
@@ -29,7 +29,7 @@ cluster (centroid : vecs) = new_cluster : cluster rest_vecs
 
 main :: IO ()
 main = do 
-  input <- parseHardError parser <$> readFile "input/25.txt"
+  input <- P.parseHardError parser <$> readFile "input/25.txt"
 
   putStr "Part 1: "
-  print $ length $ cluster input
+  print $ length $ cluster input 
