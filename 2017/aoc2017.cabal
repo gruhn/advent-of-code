@@ -1,0 +1,22 @@
+cabal-version:      2.4
+name:               aoc2017
+version:            0.1.0.0
+author:             Niklas Gruhn
+maintainer:         niklas@gruhn.me
+
+executable day01
+    main-is:          Day01.hs
+    build-depends:    base >=4.14.3.0
+                    , megaparsec
+                    , containers
+                    , vector
+    default-language: Haskell2010
+    other-modules:    Utils
+
+-- executable day02
+--     main-is:          Day02.hs
+--     build-depends:    base >=4.14.3.0
+--                     , containers
+--                     , megaparsec
+--     default-language: Haskell2010
+--     other-modules:    Utils

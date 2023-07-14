@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "./Day01.hs"
+      component: "aoc2017:exe:day01"
+
+    - path: "./Utils.hs"
+      component: "aoc2017:exe:day01"
