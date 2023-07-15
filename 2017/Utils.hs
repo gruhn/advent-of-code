@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Utils where
 
 import Text.Megaparsec (Parsec, parse, errorBundlePretty)

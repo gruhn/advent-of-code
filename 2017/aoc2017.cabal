@@ -13,10 +13,16 @@ executable day01
     default-language: Haskell2010
     other-modules:    Utils
 
--- executable day02
---     main-is:          Day02.hs
---     build-depends:    base >=4.14.3.0
---                     , containers
---                     , megaparsec
---     default-language: Haskell2010
---     other-modules:    Utils
+executable day02
+    main-is:          Day02.hs
+    build-depends:    base >=4.14.3.0
+                    , containers
+                    , megaparsec
+    default-language: Haskell2010
+    other-modules:    Utils
+
+executable day03
+    main-is:          Day03.hs
+    build-depends:    base >=4.14.3.0
+                    , containers
+    default-language: Haskell2010
