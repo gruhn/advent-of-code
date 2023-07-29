@@ -53,6 +53,11 @@ takeDistinct = go S.empty
       | S.member a seen = []
       | otherwise = a : go (S.insert a seen) as
 
+takeWhileJust :: [Maybe a] -> [a]
+takeWhileJust []            = []
+takeWhileJust (Nothing : _) = []
+takeWhileJust (Just a : as) = a : takeWhileJust as
+
 withCoordinates :: [[a]] -> [((Int,Int), a)]
 withCoordinates rows = do
   (y, row)  <- zip [0..] rows
