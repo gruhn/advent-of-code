@@ -8,10 +8,18 @@ edition = "2021"
 itertools = "0.11.0"
 
 [[bin]]
-name = "day04"
-path = "day04.rs"
-
-[[bin]]
 name = "day01"
 path = "day01.rs"
+
+[[bin]]
+name = "day02"
+path = "day02.rs"
+
+# [[bin]]
+# name = "day03"
+# path = "day03.rs"
+
+[[bin]]
+name = "day04"
+path = "day04.rs"
 
