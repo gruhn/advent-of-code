@@ -4,10 +4,14 @@ version = "1.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc1.357s.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+itertools = "0.11.0"
 
 [[bin]]
 name = "day04"
 path = "day04.rs"
 
-[dependencies]
-itertools = "0.11.0"
+[[bin]]
+name = "day01"
+path = "day01.rs"
+
