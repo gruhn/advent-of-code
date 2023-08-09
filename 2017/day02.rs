@@ -35,8 +35,8 @@ fn main() {
     let rows = parse(input);
 
     let part1: u32 = rows.iter().map(min_max_diff).sum();
-    println!("{:#?}", part1);
+    println!("Part 1: {part1}");
 
     let part2: u32 = rows.iter().map(divisor_diff).sum();
-    println!("{:#?}", part2);
+    println!("Part 2: {part2}");
 }
