@@ -11,3 +11,9 @@ cradle:
 
     - path: "./Utils.hs"
       component: "aoc2017:exe:day07"
+
+    - path: "./Day08.hs"
+      component: "aoc2017:exe:day08"
+
+    - path: "./Utils.hs"
+      component: "aoc2017:exe:day08"

@@ -1,13 +1,27 @@
 module Utils where
 
-import Text.Megaparsec (Parsec, parse, errorBundlePretty)
+import Text.Megaparsec (Parsec, parse, errorBundlePretty, empty)
 import Data.Void (Void)
 import qualified Data.Set as S
 import Data.Function (on)
 import Data.Foldable (maximumBy)
 import Data.List (group, sort)
+import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char (hspace1)
 
 type Parser = Parsec Void String
+
+space :: Parser ()
+space = L.space hspace1 empty empty
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme space
+
+symbol :: String -> Parser String
+symbol = L.symbol space
+
+integer :: Parser Int
+integer = L.signed space (lexeme L.decimal)
 
 parseFile :: Parser a -> String -> IO a
 parseFile parser path = do
@@ -80,4 +94,9 @@ mostCommon xs = Just
   $ maximumBy (compare `on` length)
   $ group 
   $ sort xs
+
+maximumBounded :: (Bounded a, Foldable t, Ord a) => t a -> a
+maximumBounded as
+  | null as   = minBound
+  | otherwise = maximum as
 
