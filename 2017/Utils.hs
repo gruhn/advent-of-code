@@ -1,6 +1,6 @@
 module Utils where
 
-import Text.Megaparsec (Parsec, parse, errorBundlePretty, empty)
+import qualified Text.Megaparsec as P
 import Data.Void (Void)
 import qualified Data.Set as S
 import Data.Function (on)
@@ -9,10 +9,10 @@ import Data.List (group, sort)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
 
-type Parser = Parsec Void String
+type Parser = P.Parsec Void String
 
 space :: Parser ()
-space = L.space hspace1 empty empty
+space = L.space hspace1 P.empty P.empty
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme space
@@ -23,12 +23,14 @@ symbol = L.symbol space
 integer :: Parser Int
 integer = L.signed space (lexeme L.decimal)
 
+parse :: Parser a -> String -> a
+parse parser input = 
+  case P.parse parser "" input of
+    Left  err    -> error (P.errorBundlePretty err)
+    Right output -> output
+
 parseFile :: Parser a -> String -> IO a
-parseFile parser path = do
-  result <- parse parser "" <$> readFile path
-  case result of
-    Left  err    -> error (errorBundlePretty err)
-    Right output -> return output
+parseFile parser path = parse parser <$> readFile path
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a
