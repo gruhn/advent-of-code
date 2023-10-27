@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-do-bind #-}
 module Main where
 
 import Utils (Parser, parseFile, lexeme, symbol, integer, maximumBounded)
@@ -6,10 +5,12 @@ import Text.Megaparsec (sepBy, (<|>), choice, some)
 import Text.Megaparsec.Char (newline, lowerChar)
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Text (Text)
+import qualified Data.Text as Text
 
-type Condition = (String, Int -> Bool)
+type Condition = (Text, Int -> Bool)
 
-data Instr = Instr String Int Condition
+data Instr = Instr Text Int Condition
 
 parser :: Parser [Instr]
 parser = instr `sepBy` newline
@@ -17,7 +18,7 @@ parser = instr `sepBy` newline
   instr :: Parser Instr
   instr = Instr <$> register <*> update <*> condition
 
-  register = lexeme (some lowerChar)
+  register = lexeme (Text.pack <$> some lowerChar)
 
   inc =   1  <$ symbol "inc"
   dec = (-1) <$ symbol "dec"
@@ -43,7 +44,7 @@ parser = instr `sepBy` newline
    num <- integer
    return (`rel` num)
 
-type Memory = Map String Int
+type Memory = Map Text Int
 
 checkCondition :: Condition -> Memory -> Bool
 checkCondition (reg, predicate) mem = 

@@ -11,47 +11,49 @@ import Control.Applicative ((<|>), Alternative (some))
 import Control.Monad (guard)
 import Data.Maybe (fromMaybe)
 import Data.Foldable (minimumBy)
+import Data.Text (Text)
+import qualified Data.Text as Text
 
-type Nodes  = Map String (Int, [String])
+type Nodes  = Map Text (Int, [Text])
 
 parser :: Parser Nodes 
 parser = Map.fromList <$> node `sepBy` newline
   where
-    node :: Parser (String, (Int, [String]))
+    node :: Parser (Text, (Int, [Text]))
     node = do
       n  <- name
       w  <- weight
       cs <- children
       return (n, (w, cs))
 
-    name :: Parser String
-    name = some lowerChar
+    name :: Parser Text
+    name = Text.pack <$> some lowerChar
 
     weight :: Parser Int
     weight = string " (" *> decimal <* string ")"
 
-    children :: Parser [String]
+    children :: Parser [Text]
     children = 
       (string " -> " *> name `sepBy` string ", ") <|> pure []
 
-findRoot :: Nodes -> String
+findRoot :: Nodes -> Text
 findRoot nodes =
   let all_names = Map.keysSet nodes
       all_children = Set.fromList $ snd =<< Map.elems nodes
    in Set.findMin $ all_names Set.\\ all_children
 
-totalWeights :: Nodes -> Map String Int
+totalWeights :: Nodes -> Map Text Int
 totalWeights nodes =
   let nodes' = Map.map weightOf nodes
 
-      weightOf :: (Int, [String]) -> Int
+      weightOf :: (Int, [Text]) -> Int
       weightOf (weight, child_names) = 
         let child_weights = map (nodes' Map.!) child_names
          in weight + sum child_weights
 
    in nodes'
 
-faultyNodes :: Nodes -> [(String, Int)]
+faultyNodes :: Nodes -> [(Text, Int)]
 faultyNodes nodes = do
   let total_weights = totalWeights nodes
 
@@ -69,11 +71,11 @@ faultyNodes nodes = do
 
   return (name, corrected_weight)
 
-isAncestorOf :: Nodes -> String -> String -> Bool
+isAncestorOf :: Nodes -> Text -> Text -> Bool
 isAncestorOf nodes node1 node2 = 
   node1 == node2 || any (isAncestorOf nodes node1) (snd $ nodes Map.! node2)       
 
-subTreeRelation :: Nodes -> String -> String -> Ordering
+subTreeRelation :: Nodes -> Text -> Text -> Ordering
 subTreeRelation nodes node1 node2
   | node1 == node2 = EQ
   | isAncestorOf nodes node1 node2 = LT

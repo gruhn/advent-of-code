@@ -10,6 +10,9 @@ import Data.Char (ord)
 import Data.Bits (xor)
 import Numeric (showHex)
 import Prelude hiding (seq)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.IO as TextIO
 
 rotate :: Int -> Seq Int -> Seq Int
 rotate n seq = 
@@ -35,20 +38,21 @@ run lengths = undo_shifts final_seq
 
   undo_shifts = rotate (- sum shifts)
 
-padLeft :: Int -> Char -> String -> String
-padLeft n c str = replicate (n - length str) c ++ str
+toHex :: Int -> Text
+toHex = Text.justifyRight 2 '0' . Text.pack . (`showHex` "")
 
 main :: IO ()
 main = do
- input <- readFile "input/10.txt"
+ input <- TextIO.readFile "input/10.txt"
 
  putStr "Part 1: "
  let lengths_p1 = parse (decimal `sepBy` char ',') input
  print $ product $ Seq.take 2 $ run lengths_p1
 
  putStr "Part 2: "
- let lengths_p2 = concat $ replicate 64 $ map ord input <> [17, 31, 73, 47, 23]
+ let input_ascii = map ord $ Text.unpack input
+     lengths_p2 = concat $ replicate 64 $ input_ascii <> [17, 31, 73, 47, 23]
      sparse_hash = run lengths_p2
      dense_hash = foldr1 xor <$> Seq.chunksOf 16 sparse_hash
-     knot_hash = concatMap (padLeft 2 '0' . (`showHex` "")) dense_hash
+     knot_hash = foldMap toHex dense_hash
  print knot_hash

@@ -8,8 +8,10 @@ import Data.Foldable (maximumBy)
 import Data.List (group, sort)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
+import Data.Text (Text)
+import qualified Data.Text.IO as TextIO
 
-type Parser = P.Parsec Void String
+type Parser = P.Parsec Void Text
 
 space :: Parser ()
 space = L.space hspace1 P.empty P.empty
@@ -17,20 +19,20 @@ space = L.space hspace1 P.empty P.empty
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme space
 
-symbol :: String -> Parser String
+symbol :: Text -> Parser Text
 symbol = L.symbol space
 
 integer :: Parser Int
 integer = L.signed space (lexeme L.decimal)
 
-parse :: Parser a -> String -> a
+parse :: Parser a -> Text -> a
 parse parser input = 
   case P.parse parser "" input of
     Left  err    -> error (P.errorBundlePretty err)
     Right output -> output
 
 parseFile :: Parser a -> String -> IO a
-parseFile parser path = parse parser <$> readFile path
+parseFile parser path = parse parser <$> TextIO.readFile path
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a

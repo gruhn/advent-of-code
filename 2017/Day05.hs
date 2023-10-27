@@ -1,17 +1,13 @@
 module Main where
 
-import Utils (Parser, parseFile, takeWhileJust)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+import Utils (Parser, parseFile, takeWhileJust, integer)
 import Text.Megaparsec (sepBy)
-import Text.Megaparsec.Char (newline, hspace)
+import Text.Megaparsec.Char (newline)
 import Data.Sequence (Seq)
 import qualified Data.Sequence as S
 
 parser :: Parser (Seq Int)
-parser = S.fromList <$> int_list
-  where
-    int = signed hspace decimal
-    int_list = int `sepBy` newline
+parser = S.fromList <$> integer `sepBy` newline
 
 type State = Maybe (Int, Seq Int)
 

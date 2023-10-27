@@ -1,10 +1,11 @@
-{-# OPTIONS_GHC -Wno-unused-do-bind #-}
 module Main where
 import Utils (Parser, parseFile)
 import Text.Megaparsec (between, (<|>), anySingle, sepBy, many, noneOf, some)
 import Text.Megaparsec.Char (char)
+import Data.Text (Text)
+import qualified Data.Text as Text
 
-data Tree = Leaf String | Node [Tree]
+data Tree = Leaf Text | Node [Tree]
  deriving Show
 
 parser :: Parser Tree
@@ -20,13 +21,13 @@ parser = tree
   node = curly $ Node <$> tree `sepBy` char ','
 
   leaf :: Parser Tree
-  leaf = angle $ Leaf . concat <$> many (canceled <|> text)
+  leaf = angle $ Leaf . mconcat <$> many (canceled <|> text)
 
-  text :: Parser String
-  text = some $ noneOf ">!"
+  text :: Parser Text
+  text = fmap Text.pack $ some $ noneOf (">!" :: String)
 
-  canceled :: Parser String
-  canceled = "" <$ char '!' <* anySingle
+  canceled :: Parser Text
+  canceled = char '!' >> anySingle >> ""
 
 score :: Tree -> Int
 score = go 1
@@ -36,9 +37,9 @@ score = go 1
   go depth (Node trees) =
    depth + sum [ go (depth+1) t | t <- trees ]
 
-collectText :: Tree -> String
+collectText :: Tree -> Text
 collectText (Leaf str) = str
-collectText (Node trees) = trees >>= collectText
+collectText (Node trees) = foldMap collectText trees
 
 main :: IO ()
 main = do
@@ -48,4 +49,4 @@ main = do
  print $ score tree
 
  putStr "Part 2: "
- print $ length $ collectText tree
+ print $ Text.length $ collectText tree
