@@ -3,29 +3,17 @@ cradle:
     - path: "./Day05.hs"
       component: "aoc2017:exe:day05"
 
-    - path: "./Utils.hs"
-      component: "aoc2017:exe:day05"
-
     - path: "./Day07.hs"
-      component: "aoc2017:exe:day07"
-
-    - path: "./Utils.hs"
       component: "aoc2017:exe:day07"
 
     - path: "./Day08.hs"
       component: "aoc2017:exe:day08"
 
-    - path: "./Utils.hs"
-      component: "aoc2017:exe:day08"
-
     - path: "./Day09.hs"
-      component: "aoc2017:exe:day09"
-
-    - path: "./Utils.hs"
       component: "aoc2017:exe:day09"
 
     - path: "./Day10.hs"
       component: "aoc2017:exe:day10"
 
-    - path: "./Utils.hs"
-      component: "aoc2017:exe:day10"
+    - path: "./Day11.hs"
+      component: "aoc2017:exe:day11"
