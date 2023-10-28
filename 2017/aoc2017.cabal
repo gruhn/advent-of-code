@@ -5,7 +5,7 @@ license:         NONE
 build-type:      Simple
 
 common config
-    ghc-options: -Wall
+    ghc-options: -Wall -Wno-unused-do-bind
     build-depends:    
           base ^>=4.16.4.0
         , megaparsec
@@ -18,25 +18,29 @@ common config
         OverloadedStrings
 
 executable day05
-    import:           config
-    main-is:          Day05.hs
+    import:  config
+    main-is: Day05.hs
 
 executable day07
-    import:           config
-    main-is:          Day07.hs
+    import:  config
+    main-is: Day07.hs
 
 executable day08
-    import:           config
-    main-is:          Day08.hs
+    import:  config
+    main-is: Day08.hs
 
 executable day09
-    import:           config
-    main-is:          Day09.hs
+    import:  config
+    main-is: Day09.hs
 
 executable day10
-    import:           config
-    main-is:          Day10.hs
+    import:  config
+    main-is: Day10.hs
 
 executable day11
-    import:           config
-    main-is:          Day11.hs
+    import:  config
+    main-is: Day11.hs
+
+executable day12
+    import:  config
+    main-is: Day12.hs
