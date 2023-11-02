@@ -76,12 +76,6 @@ takeDistinct = go S.empty
       | S.member a seen = []
       | otherwise = a : go (S.insert a seen) as
 
-withCoordinates :: [[a]] -> [((Int,Int), a)]
-withCoordinates rows = do
-  (y, row)  <- zip [0..] rows
-  (x, cell) <- zip [0..] row
-  return ((x,y), cell)
-
 withCoords :: [[a]] -> [((Int,Int), a)]
 withCoords rows = do
   (y, row)  <- zip [0..] rows

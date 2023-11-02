@@ -15,6 +15,9 @@ cradle:
     - path: "./Day10.hs"
       component: "aoc2017:exe:day10"
 
+    - path: "./KnotHash.hs"
+      component: "aoc2017:exe:day10"
+
     - path: "./Day11.hs"
       component: "aoc2017:exe:day11"
 
@@ -23,3 +26,9 @@ cradle:
 
     - path: "./Day13.hs"
       component: "aoc2017:exe:day13"
+
+    - path: "./Day14.hs"
+      component: "aoc2017:exe:day14"
+
+    - path: "./KnotHash.hs"
+      component: "aoc2017:exe:day14"

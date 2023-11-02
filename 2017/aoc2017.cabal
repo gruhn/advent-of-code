@@ -7,7 +7,7 @@ build-type:      Simple
 common config
     ghc-options: -Wall -Wno-unused-do-bind
     build-depends:    
-          base ^>=4.16.4.0
+          base ^>=4.17.2.0
         , megaparsec
         , containers
         , text
@@ -36,6 +36,7 @@ executable day09
 executable day10
     import:  config
     main-is: Day10.hs
+    other-modules: KnotHash
 
 executable day11
     import:  config
@@ -48,3 +49,8 @@ executable day12
 executable day13
     import:  config
     main-is: Day13.hs
+
+executable day14
+    import:  config
+    main-is: Day14.hs
+    other-modules: KnotHash
