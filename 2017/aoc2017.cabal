@@ -54,3 +54,7 @@ executable day14
     import:  config
     main-is: Day14.hs
     other-modules: KnotHash
+
+executable day15
+    import:  config
+    main-is: Day15.hs
