@@ -5,7 +5,7 @@ license:         NONE
 build-type:      Simple
 
 common config
-    ghc-options: -Wall -Wno-unused-do-bind
+    ghc-options: -Wall -Wno-unused-do-bind -Wno-type-defaults 
     build-depends:    
           base ^>=4.17.2.0
         , megaparsec
@@ -58,3 +58,7 @@ executable day14
 executable day15
     import:  config
     main-is: Day15.hs
+
+executable day16
+    import:  config
+    main-is: Day16.hs
