@@ -1,10 +1,11 @@
+{-# LANGUAGE TupleSections #-}
 module Utils where
 
 import qualified Text.Megaparsec as P
 import Data.Void (Void)
 import qualified Data.Set as S
 import Data.Function (on)
-import Data.Foldable (maximumBy)
+import Data.Foldable (maximumBy, toList)
 import Data.List (group, sort)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
@@ -98,3 +99,35 @@ maximumBounded as
   | null as   = minBound
   | otherwise = maximum as
 
+safeMinimum :: (Ord a, Foldable t) => t a -> Maybe a
+safeMinimum as
+  | null as   = Nothing
+  | otherwise = Just (minimum as)
+
+combinations :: [a] -> [(a,a)]
+combinations [] = []
+combinations (a:as) = 
+  map (a,) as ++ combinations as
+
+  
+data Vec3 a = Vec3 a a a
+  deriving (Eq, Ord, Show)
+
+toVec3 :: [a] -> Vec3 a
+toVec3 [x,y,z] = Vec3 x y z
+toVec3 _ = undefined
+
+instance Functor Vec3 where
+  fmap f = toVec3 . map f . toList
+
+instance Foldable Vec3 where
+  foldMap f (Vec3 x y z) = foldMap f [x,y,z]
+  length _ = 3
+  
+instance Num a => Num (Vec3 a) where
+  (+) = toVec3 .* zipWith (+) `on` toList
+  (*) = toVec3 .* zipWith (*) `on` toList
+  abs = fmap abs
+  signum = fmap signum
+  negate = fmap negate
+  fromInteger n = fromInteger <$> Vec3 n n n
