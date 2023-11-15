@@ -66,8 +66,8 @@ count p = length . filter p
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
-chunksOf n as = 
-  take n as : chunksOf n (drop n as)
+chunksOf n as = chunk : chunksOf n rest
+  where (chunk, rest) = splitAt n as
 
 takeDistinct :: Ord a => [a] -> [a]
 takeDistinct = go S.empty 
