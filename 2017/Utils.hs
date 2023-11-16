@@ -131,3 +131,31 @@ instance Num a => Num (Vec3 a) where
   signum = fmap signum
   negate = fmap negate
   fromInteger n = fromInteger <$> Vec3 n n n
+
+data Vec2 a = Vec2 a a
+  deriving (Eq, Ord, Show)
+
+toVec2 :: [a] -> Vec2 a
+toVec2 [x,y] = Vec2 x y
+toVec2 _ = undefined
+
+instance Functor Vec2 where
+  fmap f = toVec2 . map f . toList
+
+instance Foldable Vec2 where
+  foldMap f (Vec2 x y) = foldMap f [x,y]
+  length _ = 2
+  
+instance Num a => Num (Vec2 a) where
+  (+) = toVec2 .* zipWith (+) `on` toList
+  (*) = toVec2 .* zipWith (*) `on` toList
+  abs = fmap abs
+  signum = fmap signum
+  negate = fmap negate
+  fromInteger n = fromInteger <$> Vec2 n n
+
+rotateLeft90 :: Num a => Vec2 a -> Vec2 a
+rotateLeft90 (Vec2 x y) = Vec2 y (-x)
+
+rotateRight90 :: Num a => Vec2 a -> Vec2 a
+rotateRight90 (Vec2 x y) = Vec2 (-y) x
