@@ -27,7 +27,7 @@ integer :: Parser Int
 integer = L.signed space (lexeme L.decimal)
 
 parse :: Parser a -> Text -> a
-parse parser input = 
+parse parser input =
   case P.parse parser "" input of
     Left  err    -> error (P.errorBundlePretty err)
     Right output -> output
@@ -45,12 +45,12 @@ fixpointM f a = do
   a' <- f a
   if a' == a then
     return a
-  else 
+  else
     fixpointM f a'
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil _ []     = []
-takeUntil p (a:as) = 
+takeUntil p (a:as) =
   a : if p a then [] else takeUntil p as
 
 takeWhileJust :: [Maybe a] -> [a]
@@ -70,7 +70,7 @@ chunksOf n as = chunk : chunksOf n rest
   where (chunk, rest) = splitAt n as
 
 takeDistinct :: Ord a => [a] -> [a]
-takeDistinct = go S.empty 
+takeDistinct = go S.empty
   where
     go _ [] = []
     go seen (a:as)
@@ -82,7 +82,7 @@ withCoords rows = do
   (y, row)  <- zip [0..] rows
   (x, cell) <- zip [0..] row
   return ((x,y), cell)
- 
+
 (.*) :: (a -> b) -> (c -> d -> a) -> (c -> d -> b)
 (.*) f g x y = f (g x y)
 
@@ -91,7 +91,7 @@ mostCommon [] = Nothing
 mostCommon xs = Just
   $ head
   $ maximumBy (compare `on` length)
-  $ group 
+  $ group
   $ sort xs
 
 maximumBounded :: (Bounded a, Foldable t, Ord a) => t a -> a
@@ -106,10 +106,10 @@ safeMinimum as
 
 combinations :: [a] -> [(a,a)]
 combinations [] = []
-combinations (a:as) = 
+combinations (a:as) =
   map (a,) as ++ combinations as
 
-  
+
 data Vec3 a = Vec3 a a a
   deriving (Eq, Ord, Show)
 
@@ -123,7 +123,7 @@ instance Functor Vec3 where
 instance Foldable Vec3 where
   foldMap f (Vec3 x y z) = foldMap f [x,y,z]
   length _ = 3
-  
+
 instance Num a => Num (Vec3 a) where
   (+) = toVec3 .* zipWith (+) `on` toList
   (*) = toVec3 .* zipWith (*) `on` toList
@@ -145,7 +145,7 @@ instance Functor Vec2 where
 instance Foldable Vec2 where
   foldMap f (Vec2 x y) = foldMap f [x,y]
   length _ = 2
-  
+
 instance Num a => Num (Vec2 a) where
   (+) = toVec2 .* zipWith (+) `on` toList
   (*) = toVec2 .* zipWith (*) `on` toList
@@ -159,3 +159,42 @@ rotateLeft90 (Vec2 x y) = Vec2 y (-x)
 
 rotateRight90 :: Num a => Vec2 a -> Vec2 a
 rotateRight90 (Vec2 x y) = Vec2 (-y) x
+
+assertM :: Monad m => Bool -> m ()
+assertM condition
+  | condition = return ()
+  | otherwise = error "assertion failure"
+
+maximalBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
+maximalBy comp = foldr go []
+  where
+    go :: a -> [a] -> [a]
+    go a [] = [a]
+    go a (m:ms) =
+      case a `comp` m of
+        EQ -> a:m:ms -- a also maximal ==> include
+        LT -> m:ms   -- a not maximal ==> don't include
+        GT -> [a]    -- a is greater ==> reject previous results
+
+minimalBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
+minimalBy comp = foldr go []
+  where
+    go :: a -> [a] -> [a]
+    go a [] = [a]
+    go a (m:ms) =
+      case a `comp` m of
+        EQ -> a:m:ms -- a also minimal ==> include
+        GT -> m:ms   -- a not minimal ==> don't include
+        LT -> [a]    -- a is smaller ==> reject previous results
+
+maximal :: (Ord a, Foldable t) => t a -> [a]
+maximal = maximalBy compare
+
+minimal :: (Ord a, Foldable t) => t a -> [a]
+minimal = minimalBy compare
+
+iterateJust :: (a -> Maybe a) -> a -> [a]
+iterateJust f a = 
+  case f a of
+    Nothing -> [a]
+    Just a' -> a : iterateJust f a'
