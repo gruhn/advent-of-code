@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 module Utils where
 
 import qualified Text.Megaparsec as P
@@ -165,8 +164,8 @@ assertM condition
   | condition = return ()
   | otherwise = error "assertion failure"
 
-maximalBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
-maximalBy comp = foldr go []
+maximaBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
+maximaBy comp = foldr go []
   where
     go :: a -> [a] -> [a]
     go a [] = [a]
@@ -175,23 +174,6 @@ maximalBy comp = foldr go []
         EQ -> a:m:ms -- a also maximal ==> include
         LT -> m:ms   -- a not maximal ==> don't include
         GT -> [a]    -- a is greater ==> reject previous results
-
-minimalBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
-minimalBy comp = foldr go []
-  where
-    go :: a -> [a] -> [a]
-    go a [] = [a]
-    go a (m:ms) =
-      case a `comp` m of
-        EQ -> a:m:ms -- a also minimal ==> include
-        GT -> m:ms   -- a not minimal ==> don't include
-        LT -> [a]    -- a is smaller ==> reject previous results
-
-maximal :: (Ord a, Foldable t) => t a -> [a]
-maximal = maximalBy compare
-
-minimal :: (Ord a, Foldable t) => t a -> [a]
-minimal = minimalBy compare
 
 iterateJust :: (a -> Maybe a) -> a -> [a]
 iterateJust f a = 
