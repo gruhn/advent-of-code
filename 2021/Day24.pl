@@ -1,30 +1,43 @@
 :- use_module(library(clpz)).
 :- use_module(library(lists)).
-:- use_module(library(pio), [phrase_from_file/2]).
+:- use_module(library(time)).
+:- use_module(library(pio), [phrase_from_file/2, phrase_to_stream/2]).
 :- use_module(library(charsio), [char_type/2]).
 
 program(Program) :-
-    phrase_from_file(instructions(Program), "24-input.txt").
+    phrase_from_file(instructions(Program), "input/24.txt").
 
-part1(Input) :- 
+part1(Chars) :- 
     program(Program),
-
     length(Input, 14),
     Input ins 1..9,
 
     run(Program, Input, [_,_,_,0]), 
 
-    maximum(Input).
+    maximum(Input),
+    maplist(digit_char, Input, Chars).
 
-part2(Input) :-
+part2(Chars) :-
     program(Program),
-
     length(Input, 14),
     Input ins 1..9,
 
     run(Program, Input, [_,_,_,0]), 
 
-    minimum(Input).
+    minimum(Input),
+    maplist(digit_char, Input, Chars).
+
+digit_char(Digit, Char) :- 
+    number_chars(Digit, [Char]).
+
+main :-
+    time(( part1(P1),  part2(P2) )),
+    phrase_to_stream((
+        "\n",
+        "Part 1: ", P1, "\n",
+        "Part 2: ", P2, "\n"
+    ), user_output),
+    halt.
 
 % --------------------------------------------
 % Parser
