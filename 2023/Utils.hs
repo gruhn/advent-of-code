@@ -8,6 +8,7 @@ import Data.Foldable (maximumBy, toList)
 import Data.List (group, sort)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
+import Text.Megaparsec (eof)
 
 type Parser = P.Parsec Void String
 
@@ -30,7 +31,7 @@ parse parser input =
     Right output -> output
 
 parseFile :: Parser a -> String -> IO a
-parseFile parser path = parse parser <$> readFile path
+parseFile parser path = parse (parser <* eof) <$> readFile path
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a
