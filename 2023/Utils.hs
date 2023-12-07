@@ -59,8 +59,11 @@ takeWhileJust (Just a : mas) = a : takeWhileJust mas
 zipWith2D :: (a -> b -> c) -> [[a]] -> [[b]] -> [[c]]
 zipWith2D f = zipWith (zipWith f)
 
-count :: (a -> Bool) -> [a] -> Int
-count p = length . filter p
+count :: Eq a => a -> [a] -> Int
+count a = countBy (== a)
+
+countBy :: (a -> Bool) -> [a] -> Int
+countBy p = length . filter p
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
