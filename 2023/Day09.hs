@@ -1,41 +1,30 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Fuse foldr/map" #-}
 module Main where
-
 import Utils (Parser, parseFile, integer)
 import Text.Megaparsec (sepEndBy, some)
 import Text.Megaparsec.Char (newline)
 import Control.Monad (guard)
-import Data.Foldable (traverse_)
 
 parser :: Parser [[Int]]
-parser = line `sepEndBy` newline
-  where
-    line :: Parser [Int]
-    line = some integer 
+parser = some integer `sepEndBy` newline
 
-extrapolateRight :: [Int] -> [Int]
-extrapolateRight seq
-  | all (==0) seq = seq
-  | otherwise     = seq ++ [right]
-  where
-    right = left + low
-    left = last seq
-    low = last $ extrapolateRight $ zipWith (-) (tail seq) seq
+diffs :: [Int] -> [Int]
+diffs xs = zipWith (-) (tail xs) xs
 
-extrapolateLeft :: [Int] -> [Int]
-extrapolateLeft seq
-  | all (==0) seq = seq
-  | otherwise     = left : seq
-  where
-    left = right - low
-    right = head seq
-    low = head $ extrapolateLeft $ zipWith (-) (tail seq) seq
+buildTriangle :: [Int] -> [[Int]]
+buildTriangle = takeWhile (not . all (==0)) . iterate diffs
 
 main :: IO ()
 main = do
   input <- parseFile parser "input/09.txt"
 
+  let triangles = map buildTriangle input
+
   putStr "Part 1: "
-  print $ sum $ map (last . extrapolateRight) input
+  let extrapolate_right = sum . map last
+  print $ sum $ map extrapolate_right triangles
 
   putStr "Part 2: "
-  print $ sum $ map (head . extrapolateLeft) input
+  let extrapolate_left = foldr (-) 0 . map head
+  print $ sum $ map extrapolate_left triangles
