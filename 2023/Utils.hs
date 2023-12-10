@@ -166,6 +166,10 @@ assertM condition
   | condition = return ()
   | otherwise = error "assertion failure"
 
+assert :: Bool -> a -> a
+assert True  a = a
+assert False _ = error "assertion failure"
+
 maximaBy :: forall t a. Foldable t => (a -> a -> Ordering) -> t a -> [a]
 maximaBy comp = foldr go []
   where
