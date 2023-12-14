@@ -2,13 +2,18 @@ module Utils where
 
 import qualified Text.Megaparsec as P
 import Data.Void (Void)
-import qualified Data.Set as S
+import qualified Data.Set as Set
 import Data.Function (on)
 import Data.Foldable (maximumBy, toList)
-import Data.List (group, sort)
+import Data.List (group, sort, tails)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
 import Text.Megaparsec (eof)
+import Data.Set (Set)
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Control.Monad (guard)
+import Data.Maybe (fromMaybe)
 
 type Parser = P.Parsec Void String
 
@@ -35,16 +40,34 @@ parseFile parser path = parse (parser <* eof) <$> readFile path
 
 converge :: Eq a => (a -> a) -> a -> a
 converge f a
-    | a == f a  = a
-    | otherwise = converge f (f a)
+  | a == f a  = a
+  | otherwise = converge f (f a)
 
-fixpointM :: (Eq a, Monad m) => (a -> m a) -> a -> m a
-fixpointM f a = do
-  a' <- f a
-  if a' == a then
-    return a
-  else
-    fixpointM f a'
+fixpoint :: (Ord a, Eq b) => (a -> Set a) -> Set a -> (Map a b -> a -> b) -> Map a b -> Map a b
+fixpoint dep worklist f mapping = 
+  case Set.minView worklist of
+    Nothing -> mapping
+    Just (a, rest_worklist) ->
+      fromMaybe (fixpoint dep rest_worklist f mapping) $ do
+        old_value <- Map.lookup a mapping
+        let new_value = f mapping a
+        guard $ old_value /= new_value
+        let new_mapping = Map.insert a new_value mapping
+            new_worklist = rest_worklist <> dep a
+        return $ fixpoint dep new_worklist f new_mapping
+
+findCycle :: forall a. Ord a => [a] -> Maybe ([a], [a])
+findCycle = go Set.empty . tails
+  where
+    go :: Set a -> [[a]] -> Maybe ([a], [a])
+    go _ [] = Nothing
+    go _ [[]] = Nothing
+    go seen ((a:as):ass) =
+      if a `elem` seen then 
+        Just ([], a : takeWhile (/= a) as)
+      else do
+        (prefix, loop) <- go (Set.insert a seen) ass
+        return (a : prefix, loop)
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil _ []     = []
@@ -71,12 +94,12 @@ chunksOf n as = chunk : chunksOf n rest
   where (chunk, rest) = splitAt n as
 
 takeDistinct :: Ord a => [a] -> [a]
-takeDistinct = go S.empty
+takeDistinct = go Set.empty
   where
     go _ [] = []
     go seen (a:as)
-      | S.member a seen = []
-      | otherwise = a : go (S.insert a seen) as
+      | Set.member a seen = []
+      | otherwise = a : go (Set.insert a seen) as
 
 withCoords :: [[a]] -> [((Int,Int), a)]
 withCoords rows = do
