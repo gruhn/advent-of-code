@@ -11,6 +11,7 @@ common config
         , megaparsec
         , containers
         , transformers
+        , search-algorithms
     default-language: Haskell2010
     other-modules:    Utils
     default-extensions: 
