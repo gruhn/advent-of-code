@@ -10,6 +10,7 @@ common config
           base
         , megaparsec
         , containers
+        , unordered-containers        
         , transformers
         , search-algorithms
         , QuickCheck
