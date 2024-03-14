@@ -1,1 +1,4 @@
+profiling: True
+profiling-detail: late
+
 packages: .
