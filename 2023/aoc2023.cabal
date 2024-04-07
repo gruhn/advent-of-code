@@ -7,7 +7,7 @@ build-type:      Simple
 common config
     ghc-options: -Wall -Wno-unused-do-bind -Wno-type-defaults
     build-depends:    
-          base ^>=4.17.2.0
+          base
         , megaparsec
         , containers
         , transformers

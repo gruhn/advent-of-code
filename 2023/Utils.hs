@@ -108,6 +108,14 @@ withCoords rows = do
   (x, cell) <- zip [0..] row
   return ((x,y), cell)
 
+showGrid2D :: (Int -> Int -> Char) -> Int -> Int -> String
+showGrid2D show_cell width height =
+  let
+    show_row :: Int -> String
+    show_row y = map (\x -> show_cell x y) [0..width-1]
+  in
+    unlines $ map show_row [0..height-1]
+
 (.*) :: (a -> b) -> (c -> d -> a) -> (c -> d -> b)
 (.*) f g x y = f (g x y)
 
@@ -128,6 +136,11 @@ safeMinimum :: (Ord a, Foldable t) => t a -> Maybe a
 safeMinimum as
   | null as   = Nothing
   | otherwise = Just (minimum as)
+
+safeMaximum :: (Ord a, Foldable t) => t a -> Maybe a
+safeMaximum as
+  | null as   = Nothing
+  | otherwise = Just (maximum as)
 
 combinations :: [a] -> [(a,a)]
 combinations [] = []

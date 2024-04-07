@@ -16,6 +16,7 @@ module Graph
   , deleteNode
   , deleteEdge
   , fromEdges
+  , lookupEdgeLabel
   , successors
   , successorSet
   , predecessors
@@ -33,7 +34,7 @@ module Graph
   , outDegree
   , transitiveClosure
   , componentOutDegree
-  , mergeNodes
+  , contractNode
   , stoerWagner
   ) where
 
@@ -45,7 +46,13 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (guard)
 import Data.Function (on)
-import Data.Foldable (maximumBy)
+import Data.Foldable (maximumBy, for_)
+import Test.QuickCheck (Arbitrary, (===), discard, forAll)
+import qualified Test.QuickCheck as QuickCheck
+import Test.QuickCheck.Arbitrary (Arbitrary(arbitrary))
+import Test.QuickCheck.Property (Property)
+import Test.QuickCheck.Monadic (assert, PropertyM, monadicIO)
+import qualified GHC.List as List
 
 type Node = Int
 
@@ -105,10 +112,12 @@ edges = map to_edge . Map.toList . getEdgeLabels
     to_edge :: ((Node, Node), a) -> Edge a
     to_edge ((source, target), label) = Edge source target label
 
+-- | Insert a node without edges into the graph. If the node is already contained,
+-- the original graph is returned.
 insertNode :: Node -> Graph a -> Graph a
 insertNode node =
-    modifySuc (IntMap.insertWith const node IntSet.empty)
-  . modifyPre (IntMap.insertWith const node IntSet.empty)
+    modifySuc (IntMap.insertWith (\_ old -> old) node IntSet.empty)
+  . modifyPre (IntMap.insertWith (\_ old -> old) node IntSet.empty)
 
 insertEdge :: Edge a -> Graph a -> Graph a
 insertEdge = insertEdgeWith const
@@ -118,6 +127,8 @@ insertEdgeWith f (Edge source target label) =
     modifyEdgeLabels (Map.insertWith f (source, target) label)
   . modifySuc (IntMap.insertWith IntSet.union source (IntSet.singleton target))
   . modifyPre (IntMap.insertWith IntSet.union target (IntSet.singleton source))
+  . insertNode source
+  . insertNode target
 
 -- | Delete a node and all connected edges. If the node is not contained in 
 --   the graph the original graph is returned.
@@ -187,7 +198,7 @@ type Context a = ([(Node, a)], [(Node, a)])
 type Decomp a = (NodeSet, Node, NodeSet, Graph a)
 
 view :: Node -> Graph a -> Decomp a
-view node graph = 
+view node graph =
   ( predecessorSet node graph
   , node
   , successorSet node graph
@@ -260,28 +271,31 @@ componentOutDegree component graph = length $ do
   guard $ nodeB `IntSet.notMember` component
   return nodeB
 
-mergeNodes :: forall a. Node -> Node -> Graph a -> Graph a
-mergeNodes nodeA nodeB graph = 
-  let 
+-- | 
+contractNode :: forall a. Node -> Node -> Graph a -> Graph a
+contractNode nodeA nodeB graph =
+  let
     rename :: Node -> Node
     rename node = if node == nodeB then nodeA else node
 
     edges_renamed :: [Edge a]
-    edges_renamed = do 
-      Edge source target label <- inwardEdges nodeB graph ++ outwardEdges nodeB graph 
+    edges_renamed = do
+      Edge source target label <- inwardEdges nodeB graph ++ outwardEdges nodeB graph
+      -- don't add self-edges otherwise they are always added (TODO: should they?)
+      guard $ source /= nodeA && target /= nodeA
       return $ Edge (rename source) (rename target) label
   in
-    foldr insertEdge (deleteNode nodeB graph) edges_renamed 
+    foldr insertEdge (deleteNode nodeB graph) edges_renamed
 
 stoerWagner :: forall a. Graph a -> [NodeSet]
 stoerWagner graph =
   case IntMap.lookupMin (getPre graph) of
     Nothing              -> []
-    Just (start_node, _) -> 
-      let 
+    Just (start_node, _) ->
+      let
         initial_surface :: IntMap Int
-        initial_surface = 
-            IntMap.fromSet (const 1) 
+        initial_surface =
+            IntMap.fromSet (const 1)
           $ IntSet.delete start_node
           $ successorSet start_node graph
 
@@ -290,13 +304,13 @@ stoerWagner graph =
           case IntMap.toList surface of
             [] -> Nothing
             [(last_node, _)] -> Just (prev_node, last_node, component)
-            surface_list -> 
-              let 
+            surface_list ->
+              let
                 (next_node, _) = maximumBy (compare `on` snd) surface_list
                 component' = IntSet.insert next_node component
-                surface' = 
+                surface' =
                     IntMap.delete next_node
-                  $ IntMap.unionWith (+) surface 
+                  $ IntMap.unionWith (+) surface
                   $ IntMap.fromSet (const 1)
                   $ successorSet next_node graph IntSet.\\ component
               in
@@ -309,4 +323,61 @@ stoerWagner graph =
       in
         case find_cut start_node (IntSet.singleton start_node) initial_surface of
           Nothing -> []
-          Just (v1, v2, vs) -> vs : map (re_add v1 v2) (stoerWagner (mergeNodes v1 v2 graph))
+          Just (v1, v2, vs) -> vs : map (re_add v1 v2) (stoerWagner (contractNode v1 v2 graph))
+
+----------------------- TESTS -----------------------
+
+instance Arbitrary a => Arbitrary (Edge a) where
+  arbitrary = 
+    Edge 
+      <$> QuickCheck.chooseInt (0, 10) 
+      <*> QuickCheck.chooseInt (0, 10) 
+      <*> arbitrary
+
+prop_invariant_pre_suc_keyset_match :: Graph () -> Property
+prop_invariant_pre_suc_keyset_match graph = 
+  IntMap.keysSet (getPre graph) === IntMap.keysSet (getSuc graph)
+
+prop_clean_node_delete :: Property
+prop_clean_node_delete = 
+  forAll (arbitrary :: QuickCheck.Gen [Edge ()]) $ \graph_edges ->
+    let graph = Graph.fromEdges graph_edges in
+    case IntMap.lookupMin (getPre graph) of
+      Nothing        -> discard -- empty graph
+      Just (node, _) -> monadicIO $ do
+        let graph' = Graph.deleteNode node graph
+
+        for_ (IntMap.toList $ getPre graph') $ \(v, vs) -> do
+          assert $ node /= v
+          assert $ node `IntSet.notMember` vs
+
+        for_ (IntMap.toList $ getSuc graph') $ \(v, vs) -> do
+          assert $ node /= v
+          assert $ node `IntSet.notMember` vs
+
+        for_ (Map.keys $ getEdgeLabels graph') $ \(v1,v2) -> do
+          assert $ node /= v1 
+          assert $ node /= v2 
+
+prop_node_contract :: Property
+prop_node_contract = 
+  forAll (arbitrary :: QuickCheck.Gen [Edge ()]) $ \case
+    [] -> discard
+    (Edge v1 v2 _ : _) | v1 == v2 -> discard
+    (e:es) -> monadicIO $ do
+      let Edge node1 node2 _ = e
+          graph0 = Graph.fromEdges (e:es)
+          graph1 = Graph.contractNode node1 node2 graph0
+
+      for_ (IntMap.toList $ getPre graph1) $ \(v, vs) -> do
+        assert $ node2 /= v
+        assert $ node2 `IntSet.notMember` vs
+
+      for_ (IntMap.toList $ getSuc graph1) $ \(v, vs) -> do
+        assert $ node2 /= v
+        assert $ node2 `IntSet.notMember` vs
+
+      for_ (Map.keys $ getEdgeLabels graph1) $ \(v1,v2) -> do
+        assert $ node2 /= v1 
+        assert $ node2 /= v2 
+
