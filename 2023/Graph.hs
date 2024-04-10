@@ -1,9 +1,15 @@
 module Graph
   ( Node
+  , NodeSet
   , Edge(..)
   , Graph
   , empty
+  , isEmpty
   , nodes
+  , nodeSet
+  , member
+  , view
+  , match
   , edges
   , insertNode
   , insertEdge
@@ -26,18 +32,24 @@ module Graph
   , inDegree
   , outDegree
   , transitiveClosure
+  , componentOutDegree
+  , mergeNodes
+  , stoerWagner
   ) where
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 import Data.Maybe (maybeToList, fromMaybe)
-import Data.IntSet (IntSet)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (guard)
+import Data.Function (on)
+import Data.Foldable (maximumBy)
 
 type Node = Int
+
+type NodeSet = IntSet.IntSet
 
 data Edge a = Edge
   { getSource :: Node
@@ -46,18 +58,17 @@ data Edge a = Edge
   } deriving Show
 
 data Graph a = Graph
-  { getPre :: IntMap IntSet
-  , getSuc :: IntMap IntSet 
+  { getPre :: IntMap NodeSet
+  , getSuc :: IntMap NodeSet
   , getEdgeLabels :: Map (Node, Node) a
-  }
-  deriving Show
+  } deriving Show
 
 ----------------------- INTERNAL -----------------------
 
-modifySuc :: (IntMap IntSet -> IntMap IntSet) -> Graph a -> Graph a
+modifySuc :: (IntMap NodeSet -> IntMap NodeSet) -> Graph a -> Graph a
 modifySuc f graph = graph { getSuc = f (getSuc graph) }
 
-modifyPre :: (IntMap IntSet -> IntMap IntSet) -> Graph a -> Graph a
+modifyPre :: (IntMap NodeSet -> IntMap NodeSet) -> Graph a -> Graph a
 modifyPre f graph = graph { getPre = f (getPre graph) }
 
 modifyEdgeLabels :: (Map (Node, Node) a -> Map (Node, Node) a) -> Graph a -> Graph a
@@ -69,15 +80,24 @@ deleteInwardEdges target graph =
 
 deleteOutwardEdges :: Node -> Graph a -> Graph a
 deleteOutwardEdges source graph =
-  IntSet.fold (deleteEdge source) graph (successorSet source graph)
+  IntSet.fold (source `deleteEdge`) graph (successorSet source graph)
 
 ----------------------- EXPORTED -----------------------
 
 empty :: Graph a
 empty = Graph IntMap.empty IntMap.empty Map.empty
 
+isEmpty :: Graph a -> Bool
+isEmpty = null . getPre
+
 nodes :: Graph a -> [Node]
 nodes = IntMap.keys . getPre
+
+nodeSet :: Graph a -> NodeSet
+nodeSet = IntMap.keysSet . getPre
+
+member :: Node -> Graph a -> Bool
+member node graph = IntMap.member node (getPre graph)
 
 edges :: Graph a -> [Edge a]
 edges = map to_edge . Map.toList . getEdgeLabels
@@ -103,10 +123,10 @@ insertEdgeWith f (Edge source target label) =
 --   the graph the original graph is returned.
 deleteNode :: Node -> Graph a -> Graph a
 deleteNode node =
-    deleteOutwardEdges node
-  . deleteInwardEdges node
-  . modifySuc (IntMap.delete node)
+    modifySuc (IntMap.delete node)
   . modifyPre (IntMap.delete node)
+  . deleteOutwardEdges node
+  . deleteInwardEdges node
 
 deleteEdge :: Node -> Node -> Graph a -> Graph a
 deleteEdge source target =
@@ -118,11 +138,11 @@ adjustEdgeLabel :: (a -> a) -> Node -> Node -> Graph a -> Graph a
 adjustEdgeLabel f source target = modifyEdgeLabels (Map.adjust f (source, target))
 
 adjustOutwardEdgeLabels :: (a -> a) -> Node -> Graph a -> Graph a
-adjustOutwardEdgeLabels f source graph = 
+adjustOutwardEdgeLabels f source graph =
   IntSet.fold (adjustEdgeLabel f source) graph (successorSet source graph)
 
 adjustInwardEdgeLabels :: (a -> a) -> Node -> Graph a -> Graph a
-adjustInwardEdgeLabels f target graph = 
+adjustInwardEdgeLabels f target graph =
   IntSet.fold (\source -> adjustEdgeLabel f source target) graph (predecessorSet target graph)
 
 fromEdges :: [Edge a] -> Graph a
@@ -132,19 +152,19 @@ lookupEdgeLabel :: Node -> Node -> Graph a -> Maybe a
 lookupEdgeLabel source target (Graph _ _ edge_labels) =
   Map.lookup (source, target) edge_labels
 
-predecessorSet :: Node -> Graph a -> IntSet
+predecessorSet :: Node -> Graph a -> NodeSet
 predecessorSet target = fromMaybe IntSet.empty . IntMap.lookup target . getPre
 
 predecessors :: Node -> Graph a -> [Node]
 predecessors node = IntSet.toList . predecessorSet node
 
-successorSet :: Node -> Graph a -> IntSet 
+successorSet :: Node -> Graph a -> NodeSet
 successorSet source = fromMaybe IntSet.empty . IntMap.lookup source . getSuc
 
 successors :: Node -> Graph a -> [Node]
 successors node = IntSet.toList . successorSet node
 
-neighborSet :: Node -> Graph a -> IntSet
+neighborSet :: Node -> Graph a -> NodeSet
 neighborSet node graph = successorSet node graph <> predecessorSet node graph
 
 neighbors :: Node -> Graph a -> [Node]
@@ -164,31 +184,46 @@ outwardEdges source graph = do
 
 type Context a = ([(Node, a)], [(Node, a)])
 
+type Decomp a = (NodeSet, Node, NodeSet, Graph a)
+
+view :: Node -> Graph a -> Decomp a
+view node graph = 
+  ( predecessorSet node graph
+  , node
+  , successorSet node graph
+  , deleteNode node graph
+  )
+
+match :: Graph a -> Maybe (Decomp a)
+match graph = do
+  (node, _) <- IntMap.lookupMin $ getPre graph
+  return $ view node graph
+
 context :: Node -> Graph a -> Context a
 context node graph =
-  let 
+  let
     inn = [ (source, label) | Edge source _ label <- inwardEdges node graph ]
     out = [ (target, label) | Edge _ target label <- outwardEdges node graph ]
   in
     (inn, out)
 
 insertContext :: Node -> Context a -> Graph a -> Graph a
-insertContext node (inn, out) graph = 
-  let 
+insertContext node (inn, out) graph =
+  let
     inward_edges  = [ Edge source node label | (source, label) <- inn ]
     outward_edges = [ Edge node target label | (target, label) <- out ]
   in
     foldr insertEdge graph (inward_edges ++ outward_edges)
 
 modifyEdges :: (Context a -> Context a) -> Node -> Graph a -> Graph a
-modifyEdges f node graph = 
+modifyEdges f node graph =
   insertContext node (f (context node graph)) $ deleteNode node graph
 
 filterEdges :: forall a. (Edge a -> Bool) -> Graph a -> Graph a
-filterEdges keep initial_graph = 
+filterEdges keep initial_graph =
   let
     go :: Edge a -> Graph a -> Graph a
-    go edge graph 
+    go edge graph
       | keep edge = graph
       | otherwise = deleteEdge (getSource edge) (getTarget edge) graph
   in
@@ -202,7 +237,7 @@ inDegree node = IntSet.size . predecessorSet node
 
 -- TODO: test this
 transitiveClosure :: Graph Int -> Graph Int
-transitiveClosure initial_graph = 
+transitiveClosure initial_graph =
   let
     go :: [Edge Int] -> Graph Int -> Graph Int
     go [] graph = graph
@@ -217,3 +252,61 @@ transitiveClosure initial_graph =
         go (new_edges ++ rest_edges) (foldr (insertEdgeWith min) graph new_edges)
   in
     go (edges initial_graph) initial_graph
+
+componentOutDegree :: NodeSet -> Graph a -> Int
+componentOutDegree component graph = length $ do
+  nodeA <- IntSet.toList component
+  nodeB <- successors nodeA graph
+  guard $ nodeB `IntSet.notMember` component
+  return nodeB
+
+mergeNodes :: forall a. Node -> Node -> Graph a -> Graph a
+mergeNodes nodeA nodeB graph = 
+  let 
+    rename :: Node -> Node
+    rename node = if node == nodeB then nodeA else node
+
+    edges_renamed :: [Edge a]
+    edges_renamed = do 
+      Edge source target label <- inwardEdges nodeB graph ++ outwardEdges nodeB graph 
+      return $ Edge (rename source) (rename target) label
+  in
+    foldr insertEdge (deleteNode nodeB graph) edges_renamed 
+
+stoerWagner :: forall a. Graph a -> [NodeSet]
+stoerWagner graph =
+  case IntMap.lookupMin (getPre graph) of
+    Nothing              -> []
+    Just (start_node, _) -> 
+      let 
+        initial_surface :: IntMap Int
+        initial_surface = 
+            IntMap.fromSet (const 1) 
+          $ IntSet.delete start_node
+          $ successorSet start_node graph
+
+        find_cut :: Node -> NodeSet -> IntMap Int -> Maybe (Node, Node, NodeSet)
+        find_cut prev_node component surface =
+          case IntMap.toList surface of
+            [] -> Nothing
+            [(last_node, _)] -> Just (prev_node, last_node, component)
+            surface_list -> 
+              let 
+                (next_node, _) = maximumBy (compare `on` snd) surface_list
+                component' = IntSet.insert next_node component
+                surface' = 
+                    IntMap.delete next_node
+                  $ IntMap.unionWith (+) surface 
+                  $ IntMap.fromSet (const 1)
+                  $ successorSet next_node graph IntSet.\\ component
+              in
+                find_cut next_node component' surface'
+
+        re_add :: Node -> Node -> NodeSet -> NodeSet
+        re_add v1 v2 node_set
+          | IntSet.member v1 node_set = IntSet.insert v2 node_set
+          | otherwise = node_set
+      in
+        case find_cut start_node (IntSet.singleton start_node) initial_surface of
+          Nothing -> []
+          Just (v1, v2, vs) -> vs : map (re_add v1 v2) (stoerWagner (mergeNodes v1 v2 graph))
