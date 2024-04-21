@@ -14,6 +14,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (guard)
 import Data.Maybe (fromMaybe)
+import Test.QuickCheck (Arbitrary (arbitrary))
 
 type Parser = P.Parsec Void String
 
@@ -156,6 +157,9 @@ instance Num a => Num (Vec3 a) where
   negate = fmap negate
   fromInteger n = fromInteger <$> Vec3 n n n
 
+instance Arbitrary a => Arbitrary (Vec3 a) where
+  arbitrary = Vec3 <$> arbitrary <*> arbitrary <*> arbitrary
+
 data Vec2 a = Vec2 a a
   deriving (Eq, Ord, Show)
 
@@ -169,6 +173,9 @@ instance Functor Vec2 where
 instance Foldable Vec2 where
   foldMap f (Vec2 x y) = foldMap f [x,y]
   length _ = 2
+
+instance Arbitrary a => Arbitrary (Vec2 a) where
+  arbitrary = Vec2 <$> arbitrary <*> arbitrary
 
 instance Num a => Num (Vec2 a) where
   (+) = toVec2 .* zipWith (+) `on` toList

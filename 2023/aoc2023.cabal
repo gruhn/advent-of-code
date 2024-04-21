@@ -12,9 +12,11 @@ common config
         , containers
         , transformers
         , search-algorithms
+        , QuickCheck
     default-language: Haskell2010
     other-modules:    Utils
                     , Graph
+                    , PairingHeap
     default-extensions: 
         LambdaCase
         ScopedTypeVariables
@@ -116,6 +118,7 @@ executable day23
 executable day24
     import:  config
     main-is: Day24.hs
+    build-depends: sbv
 
 executable day25
     import:  config
