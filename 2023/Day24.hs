@@ -4,9 +4,21 @@ import Utils (Parser, parseFile, Vec3(..), symbol, integer, toVec3, Vec2(..), as
 import Text.Megaparsec (sepEndBy, sepBy)
 import Text.Megaparsec.Char (newline)
 import Data.List (tails)
-import Control.Monad (guard, zipWithM_)
+import Control.Monad (guard)
 import Data.Maybe (maybeToList)
-import Data.SBV (ConstraintSet, (.>=), constrain, (.==), sat, Symbolic, sReal, SReal, sReals, Modelable (getModelValue), AlgReal)
+import qualified Data.IntMap as IntMap
+import Theory.NonLinearRealArithmatic.Expr (Expr(..), Var)
+import Theory.NonLinearRealArithmatic.Constraint (Constraint, ConstraintRelation (..))
+import qualified Theory.NonLinearRealArithmatic.Polynomial as Polynomial
+import Theory.NonLinearRealArithmatic.BoundedFloating (BoundedFloating (..))
+import Theory.NonLinearRealArithmatic.Polynomial (Assignment)
+import Theory.NonLinearRealArithmatic.IntervalUnion (IntervalUnion(..))
+import qualified Theory.NonLinearRealArithmatic.IntervalUnion as IntervalUnion
+import Theory.NonLinearRealArithmatic.Interval (Interval(..))
+import Theory.NonLinearRealArithmatic.IntervalConstraintPropagation (intervalConstraintPropagation)
+import Data.Foldable (minimumBy, traverse_)
+import Data.Function (on)
+import Theory.NonLinearRealArithmatic.IntervalUnion (diameter)
 
 type Trajectory2 = (Vec2 Rational, Vec2 Rational)
 
@@ -50,10 +62,7 @@ intersectionPoint (Vec2 x1 y1, Vec2 vx1 vy1) (Vec2 x2 y2, Vec2 vx2 vy2) = do
 projectXY :: Trajectory3 Rational -> Trajectory2
 projectXY (Vec3 x y _, Vec3 vx vy _) = (Vec2 x y, Vec2 vx vy)
 
-collisionTrajectory :: Symbolic (Trajectory3 SReal)
-collisionTrajectory = do
-  [x, y, z, vx, vy, vz] <- sReals ["x", "y", "z", "vx", "vy", "vz"]
-  return (Vec3 x y z, Vec3 vx vy vz)
+{-
 
 collisionConstraints :: [Trajectory3 Rational] -> Trajectory3 SReal -> ConstraintSet
 collisionConstraints trajectories (Vec3 x y z, Vec3 vx vy vz) = 
@@ -67,6 +76,71 @@ collisionConstraints trajectories (Vec3 x y z, Vec3 vx vy vz) =
       constrain $ z - time*vz .== fromRational z' + time * fromRational vz'
   in
     zipWithM_ go [1..] trajectories
+-}
+
+type BoundedRational = BoundedFloating Double
+
+type VarDomain = IntervalUnion BoundedRational
+
+collisionConstraints :: [Trajectory3 Rational] -> (Vec3 Var, Assignment VarDomain, [Constraint BoundedRational])
+collisionConstraints trajectories = 
+  let 
+    sol_x, sol_y, sol_z, sol_vx, sol_vy, sol_vz :: Expr BoundedRational
+    sol_x  = Var 1
+    sol_y  = Var 2
+    sol_z  = Var 3
+    sol_vx = Var 4
+    sol_vy = Var 5
+    sol_vz = Var 6
+
+    symbolic_solution :: Vec3 Var
+    symbolic_solution = Vec3 1 2 3
+
+    time_vars :: [Expr BoundedRational]
+    time_vars = [ Var (i+7) | i <- [1 .. length trajectories] ]
+
+    initial_domains :: Assignment VarDomain
+    initial_domains = IntMap.fromList [ (var, IntervalUnion [ Val (-400000000000000) :..: Val 400000000000000 ]) | var <- [1 .. length trajectories + 6 ] ]
+
+    constant :: Rational -> Expr BoundedRational
+    constant = Const . Val . fromRational
+
+    {-| 
+      build constraints:
+        0 <= time
+        0 = (sol_x - x) + time * (sol_vx - vx)
+        0 = (sol_y - y) + time * (sol_vy - vy)
+        0 = (sol_z - z) + time * (sol_vz - vz)
+    -}
+    constraints_from :: Expr BoundedRational -> Trajectory3 Rational -> [Constraint BoundedRational]
+    constraints_from time (Vec3 x y z, Vec3 vx vy vz) = 
+      [ (LessEquals, Polynomial.fromExpr time)
+      , (Equals, Polynomial.fromExpr $ sol_x - constant x + time * (sol_vx - constant vx))
+      , (Equals, Polynomial.fromExpr $ sol_y - constant y + time * (sol_vy - constant vy))
+      , (Equals, Polynomial.fromExpr $ sol_z - constant z + time * (sol_vz - constant vz))
+      ]
+
+    constraints :: [Constraint BoundedRational]
+    constraints = concat $ zipWith constraints_from time_vars trajectories
+  in
+    (symbolic_solution, initial_domains, constraints)
+
+toIntOrSplit :: IntervalUnion BoundedRational -> IntervalUnion BoundedRational 
+toIntOrSplit = IntervalUnion.modifyIntervals (concatMap go)
+  where
+    go :: Interval BoundedRational -> [Interval BoundedRational]
+    go interval@(Val lb :..: Val ub) 
+      | ceiling lb == floor ub = [ Val (fromIntegral $ floor ub) :..: Val (fromIntegral $ floor ub) ]
+      | ceiling lb >  floor ub = []
+      | otherwise = split interval
+    go internval = split internval
+
+    split :: Interval BoundedRational -> [Interval BoundedRational]
+    split (NegInf :..: PosInf)  = [ NegInf :..: Val 0, Val 0 :..: PosInf ]
+    split (NegInf :..: Val val) = [ NegInf :..: Val (abs val * (-2)), Val (abs val * (-2)) :..: Val val ]
+    split (Val val :..: PosInf) = [ Val val :..: Val (abs val * 2), Val (abs val * 2) :..: PosInf ]
+    split (Val lb :..: Val ub) = [ Val lb :..: Val ((ub+lb)/2), Val ((ub+lb)/2) :..: Val ub ]
+    split _ = undefined
 
 main :: IO ()
 main = do
@@ -84,12 +158,13 @@ main = do
     return (Vec2 x y)
 
   putStr "Part 2: "
-  solution <- sat $ do
-    traj <- collisionTrajectory
-    collisionConstraints trajectories traj
+  let (symbolic_solution, initial_domains, constraints) = collisionConstraints trajectories
 
-  print $ do
-    x <- getModelValue "x" solution
-    y <- getModelValue "y" solution
-    z <- getModelValue "z" solution
-    return (x + y + z :: AlgReal)
+  -- traverse_ print constraints
+
+  traverse_ print 
+    -- $ minimum
+    -- $ map (diameter . snd)
+    $ IntMap.toList
+    $ (!! 1) 
+    $ iterate (IntMap.map toIntOrSplit . intervalConstraintPropagation constraints) initial_domains
