@@ -29,7 +29,7 @@ cluster (centroid : vecs) = new_cluster : cluster rest_vecs
 
 main :: IO ()
 main = do 
-  input <- P.parseHardError parser <$> readFile "input/25.txt"
+  input <- P.parseWith parser "input/25.txt"
 
   putStr "Part 1: "
   print $ length $ cluster input 
