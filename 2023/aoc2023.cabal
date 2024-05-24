@@ -19,11 +19,13 @@ common config
                     , Graph
                     , PairingHeap
                     , RegExp
+                    , DFA
     default-extensions: 
         LambdaCase
         ScopedTypeVariables
         TupleSections
-        OverloadedStrings
+        OverloadedRecordDot 
+        DuplicateRecordFields
 
 executable day01
     import:  config

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Main where
 
 import Utils (Parser, parseFile)
@@ -13,6 +15,8 @@ import Control.Monad.Trans.State (StateT)
 import qualified Control.Monad.Trans.State as StateT
 import Data.Functor.Identity (Identity)
 import Data.Maybe (catMaybes)
+import Data.Foldable (traverse_, for_)
+import RegExp (RegExp (..), intersection, toNFA, states)
 
 data SymbolL = DotL | HashL | Wildcard
   deriving (Eq, Ord)
@@ -116,18 +120,53 @@ alignments state0 = StateT.evalState (align state0) Map.empty
           StateT.modify (Map.insert state $ sum path_counts)
           return $ sum path_counts
 
+-- data SymbolL = DotL | HashL | Wildcard
+--   deriving (Eq, Ord)
+
+-- data SymbolR = DotR | HashR | ManyDot
+--   deriving (Eq, Ord)
+
+fromPatternL :: PatternL -> RegExp
+fromPatternL pattern =
+  foldr1 Concat $ do 
+    symbol <- pattern
+    return $ case symbol of
+      DotL  -> Char '.'
+      HashL -> Char '#'
+      Wildcard -> Union (Char '.') (Char '#')
+
+fromPatternR :: PatternR -> RegExp
+fromPatternR pattern =
+  foldr1 Concat $ do 
+    symbol <- pattern
+    return $ case symbol of
+      DotR  -> Char '.'
+      HashR -> Char '#'
+      ManyDot -> Star (Char '.')
+
 main :: IO ()
 main = do
   input <- parseFile parser "input/12.txt"
 
-  putStr "Part 1: "
-  print $ sum $ map alignments $ do 
-    (str, hash_counts) <- input
-    return (toPatternL str, toPatternR hash_counts)
+  -- putStr "Part 1: "
+  -- print $ sum $ map alignments $ do 
+  --   (str, hash_counts) <- input
+  --   return (toPatternL str, toPatternR hash_counts)
 
-  putStr "Part 2: "
-  print $ sum $ map alignments $ do 
-    (str, hash_counts) <- input
+  -- putStr "Part 2: "
+  -- print $ sum $ map alignments $ do 
+  --   (str, hash_counts) <- input
+  --   let str_extended = intercalate "?" $ replicate 5 str
+  --       hash_counts_extended = concat $ replicate 5 hash_counts
+  --   return (toPatternL str_extended, toPatternR hash_counts_extended)
+
+  for_ input $ \(str, hash_counts) -> do 
     let str_extended = intercalate "?" $ replicate 5 str
         hash_counts_extended = concat $ replicate 5 hash_counts
-    return (toPatternL str_extended, toPatternR hash_counts_extended)
+
+        reL = toNFA $ fromPatternL $ toPatternL str_extended
+        reR = toNFA $ fromPatternR $ toPatternR hash_counts_extended
+
+    print $ length $ states $ intersection reL reR
+
+  
