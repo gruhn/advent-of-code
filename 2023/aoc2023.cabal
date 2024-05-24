@@ -18,6 +18,7 @@ common config
     other-modules:    Utils
                     , Graph
                     , PairingHeap
+                    , RegExp
     default-extensions: 
         LambdaCase
         ScopedTypeVariables
