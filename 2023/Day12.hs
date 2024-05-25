@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 module Main where
 
 import Utils (Parser, parseFile)
@@ -16,7 +14,7 @@ import qualified Control.Monad.Trans.State as StateT
 import Data.Functor.Identity (Identity)
 import Data.Maybe (catMaybes)
 import Data.Foldable (traverse_, for_)
-import RegExp (RegExp (..), intersection, toNFA, states)
+import RegExp (RegExp (..), intersection, toNFA)
 
 data SymbolL = DotL | HashL | Wildcard
   deriving (Eq, Ord)
@@ -144,6 +142,12 @@ fromPatternR pattern =
       HashR -> Char '#'
       ManyDot -> Star (Char '.')
 
+patlToDFA :: PatternL -> DFA
+patlToDFA = _
+
+patrToDFA :: PatternR -> DFA
+patrToDFA = _
+
 main :: IO ()
 main = do
   input <- parseFile parser "input/12.txt"
@@ -168,5 +172,4 @@ main = do
         reR = toNFA $ fromPatternR $ toPatternR hash_counts_extended
 
     print $ length $ states $ intersection reL reR
-
-  
+ 

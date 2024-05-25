@@ -1,7 +1,5 @@
-module RegExp 
-  ( RegExp(..)
-  , toNFA
-  , intersection
+module NFA
+  ( intersection
   , states
   ) where
 import Prelude hiding (concat)
@@ -10,64 +8,6 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.IntSet as IntSet
 import Data.Containers.ListUtils (nubInt)
-
-data RegExp
-  = Empty
-  | EmptyString
-  | Char Char 
-  | Concat RegExp RegExp 
-  | Union RegExp RegExp 
-  | Star RegExp
-
-instance Show RegExp where
-  show = \case
-    Empty -> "∅" 
-    EmptyString -> "ε"
-    Char lit -> [lit]
-    Concat re1 re2 -> show re1 ++ show re2
-    Union re1 re2 -> "(" ++ show re1 ++ "|" ++ show re2 ++ ")"
-    Star re -> "(" ++ show re ++ ")*"
-
-{- concat :: RegExp -> RegExp -> RegExp
-concat re1 re2 = 
-  case (re1, re2) of
-    (Empty      , re2)         -> Empty
-    (re1        , Empty)       -> Empty
-    (EmptyString, re2)         -> re2
-    (re1        , EmptyString) -> re1
-    (re1        , re2)         -> Concat re1 re2
-
-union :: RegExp -> RegExp -> RegExp
-union re1 re2 = 
-  case (re1, re2) of
-    (Empty, re2)   -> re1
-    (re1  , Empty) -> re2
-    (re1  , re2)   -> Union re1 re2 -}
-
--- intersection :: RegExp -> RegExp -> RegExp
--- intersection re1 re2 = 
---   case (re1, re2) of
---     (Empty, _) -> Empty
---     (_, Empty) -> Empty
-
---     (Union re11 re12, _) -> 
---       intersection re11 re2 `union` intersection re12 re2
---     (_, Union re21 re22) -> 
---       intersection re1 re21 `union` intersection re2 re22
-
---     (Star _   , EmptyString) -> EmptyString
---     (Star re11, Literal lit) -> _
---     (Star re11, Concat re21 re22) -> _
---     (Star re11, Star re21) -> _
-
---     (EmptyString, EmptyString) -> EmptyString
---     (EmptyString, Literal _) -> Empty
---     (EmptyString, Concat re21 re22) -> error "TODO"
---     (EmptyString, Star _) -> EmptyString
---     (_, EmptyString) -> intersection EmptyString re1
-
---     (Literal lit, EmptyString) -> EmptyString
---     (Literal lit, Star re) -> EmptyString
 
 data NFA = NFA
   { startState  :: Int -- double serves as maximum state

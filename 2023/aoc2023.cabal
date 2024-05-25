@@ -20,6 +20,7 @@ common config
                     , PairingHeap
                     , RegExp
                     , DFA
+                    , NFA
     default-extensions: 
         LambdaCase
         ScopedTypeVariables
