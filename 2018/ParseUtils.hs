@@ -3,12 +3,18 @@ module ParseUtils where
 import Data.Void ( Void )
 import Text.Megaparsec ( Parsec, parse, errorBundlePretty )
 import Text.Megaparsec.Char ( hspace )
-import Text.Megaparsec.Char.Lexer ( lexeme, signed, decimal )
+import qualified Text.Megaparsec.Char.Lexer as Lex
 
 type Parser = Parsec Void String
 
 integer :: Parser Int
-integer = signed hspace decimal
+integer = Lex.signed hspace Lex.decimal
+
+symbol :: String -> Parser String
+symbol = Lex.symbol hspace
+
+lexeme :: Parser a -> Parser a
+lexeme = Lex.lexeme hspace
 
 parseWith :: Parser a -> String -> IO a
 parseWith parser file_path = do 
