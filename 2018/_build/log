@@ -1,0 +1,15 @@
+# dune exec Day04
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Shared cache location: /Users/gruhn/.cache/dune/db
+# Workspace root: /Users/gruhn/repos/advent-of-code/2018
+# Auto-detected concurrency: 6
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Dev
+#  ; merlin = true
+#  ; fdo_target_exe = None
+#  ; build_dir = In_build_dir "default"
+#  ; instrument_with = []
+#  }
