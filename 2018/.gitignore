@@ -2,5 +2,6 @@
 dist-newstyle
 app/build
 /lake-packages/*
+.lake
 lean-toolchain
 build

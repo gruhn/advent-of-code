@@ -1,15 +1,14 @@
 import Lake
 open Lake DSL
 
-package «aoc2018» {
-  -- add package configuration options here
-}
+require batteries from git 
+  "https://github.com/leanprover-community/batteries" @ "v4.8.0"
 
-lean_lib «Gen» {
-  -- add library configuration options here
-}
+package aoc2018
 
 @[default_target]
-lean_exe «Day01» {
+lean_exe day01 where
   root := `Day01
-}
+
+lean_exe day05 where
+  root := `Day05
