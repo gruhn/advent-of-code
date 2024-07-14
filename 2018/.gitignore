@@ -5,3 +5,4 @@ app/build
 .lake
 lean-toolchain
 build
+.direnv

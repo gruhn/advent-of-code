@@ -12,3 +12,6 @@ lean_exe day01 where
 
 lean_exe day05 where
   root := `Day05
+
+lean_exe day06  where
+  root := `Day06
