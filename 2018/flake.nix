@@ -15,6 +15,8 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             lean4
+            cargo
+            rust-analyzer-unwrapped
           ];
         };
       }
