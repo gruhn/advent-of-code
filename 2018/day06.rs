@@ -34,7 +34,8 @@ fn parse_file(str: &str) -> Vec<Point> {
     str.lines().map(parse_line).collect()
 }
 
-fn manhattan_dist(p1: Point, p2: Point) -> i64 {
+// manhattan distance
+fn dist(p1: Point, p2: Point) -> i64 {
     (p1.x - p2.x).abs() + (p1.y - p2.y).abs()
 }
 
@@ -57,7 +58,7 @@ fn expand(center: Point, other_centers: &Vec<Point>) -> HashSet<Point> {
             all_points.insert(*point);
         }
 
-        frontier.iter().flat_map(neighbors).filter(|point| _);
+        // frontier.iter().flat_map(neighbors)
     }
 
     all_points
