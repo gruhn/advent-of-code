@@ -6,33 +6,42 @@ maintainer:         niklas@gruhn.me
 build-type:         Simple
 
 common config
-    ghc-options: -Wall -Wno-unused-do-bind -Wno-type-defaults
-    build-depends:    
-          base
-        , megaparsec
-        , containers
-        , unordered-containers        
-        , transformers
-        , QuickCheck
-        , time
-    default-language: Haskell2010
-    other-modules: 
-        ParseUtils
-    default-extensions: 
-        LambdaCase
-        ScopedTypeVariables
-        TupleSections
-        OverloadedRecordDot
-        DuplicateRecordFields
+  ghc-options: -Wall -Wno-unused-do-bind -Wno-type-defaults
+  build-depends:    
+      base
+    , megaparsec
+    , containers
+    , unordered-containers        
+    , transformers
+    , QuickCheck
+    , time
+  default-language: Haskell2010
+  other-modules: 
+    ParseUtils
+  default-extensions: 
+    LambdaCase
+    ScopedTypeVariables
+    TupleSections
+    OverloadedRecordDot
+    NumericUnderscores
+    DuplicateRecordFields
 
 executable day03
-    import:  config
-    main-is: Day03.hs
+  import:  config
+  main-is: Day03.hs
 
 executable day04
-    import:  config
-    main-is: Day04.hs
+  import:  config
+  main-is: Day04.hs
+
+executable day06
+  import:  config
+  main-is: Day06.hs
+
+executable day07
+  import:  config
+  main-is: Day07.hs
 
 executable day25
-    import:  config
-    main-is: Day25.hs
+  import:  config
+  main-is: Day25.hs
