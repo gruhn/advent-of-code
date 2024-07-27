@@ -42,6 +42,10 @@ executable day07
   import:  config
   main-is: Day07.hs
 
+executable day08
+  import:  config
+  main-is: Day08.hs
+
 executable day25
   import:  config
   main-is: Day25.hs
