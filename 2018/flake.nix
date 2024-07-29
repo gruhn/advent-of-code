@@ -17,6 +17,11 @@
             lean4
             cargo
             rust-analyzer-unwrapped
+
+            # haskell.compiler.ghc964
+            # haskell.packages.ghc964.haskell-language-server
+            # haskell.packages.ghc964.cabal-install
+            # haskell.packages.ghc964.implicit-hie
           ];
         };
       }
