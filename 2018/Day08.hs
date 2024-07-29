@@ -10,7 +10,7 @@ import Data.Maybe (maybeToList)
 data Tree = Node [Tree] [Int]
 
 parser :: Parser Tree
-parser = tree
+parser = node
   where
     decimal :: Parser Int
     decimal = Lex.lexeme space Lex.decimal

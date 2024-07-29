@@ -1,7 +1,7 @@
 module ParseUtils where
 
 import Data.Void ( Void )
-import Text.Megaparsec ( Parsec, parse, errorBundlePretty )
+import Text.Megaparsec ( Parsec, parse, errorBundlePretty, eof )
 import Text.Megaparsec.Char ( hspace )
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
@@ -19,6 +19,6 @@ lexeme = Lex.lexeme hspace
 parseWith :: Parser a -> String -> IO a
 parseWith parser file_path = do 
   input <- readFile file_path
-  case parse parser "" input of
+  case parse (parser <* eof) "" input of
     Left err     -> error (errorBundlePretty err)
     Right output -> return output
