@@ -26,6 +26,10 @@ common config
     NumericUnderscores
     DuplicateRecordFields
 
+executable day02
+  import:  config
+  main-is: Day02.hs
+
 executable day03
   import:  config
   main-is: Day03.hs
@@ -49,6 +53,10 @@ executable day08
 executable day10
   import:  config
   main-is: Day10.hs
+
+executable day11
+  import:  config
+  main-is: Day11.hs
 
 executable day25
   import:  config
