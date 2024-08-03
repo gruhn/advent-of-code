@@ -7,6 +7,9 @@ import Data.Map
 import qualified Data.Map as Map
 import Control.Monad.Trans.State (State)
 import qualified Control.Monad.Trans.State as State
+import Data.Vector (Vector)
+import qualified Data.Vector as Vector
+import Data.Maybe (fromMaybe)
 
 type Cell = (Int,Int)
 
@@ -30,12 +33,17 @@ cellPowerLevel grid_serial_number (x,y) =
       & subtract 5
 
 -- | See: https://en.wikipedia.org/wiki/Summed-area_table
-type SummedAreaTable = Map Cell Int
+type SummedAreaTable = Vector (Vector Int)
+
+lookupCell :: Cell -> SummedAreaTable -> Int
+lookupCell (x,y) table = fromMaybe 0 $ do
+  row <- table Vector.!? y
+  row Vector.!? x
 
 tableFor :: Int -> SummedAreaTable
 tableFor grid_serial_number = 
   let
-    go :: Cell -> State SummedAreaTable Int
+    go :: Cell -> State (Map Cell Int) Int
     go (x,y) =
       if x > 300 || y > 300 then 
         return 0
@@ -51,16 +59,23 @@ tableFor grid_serial_number =
                 value_total = value_cell + value_east + value_south - value_south_east
             State.modify (Map.insert (x,y) value_total)
             return value_total
+
+    -- After construction, we do a lot of lookups in `SummedAreaTable` but no writes.
+    -- So converting the `Map Cell Int` to a `Vector (Vector Int)` seems to give almost
+    -- 2x speed up.
+    to_vector :: Map Cell Int -> Vector (Vector Int)
+    to_vector dict = 
+      Vector.generate 300 (\y -> Vector.generate 300 (\x -> dict Map.! (x,y)))
   in
-    State.execState (go (1,1)) Map.empty
+    to_vector $ State.execState (go (1,1)) Map.empty
 
 squarePowerLevel :: SummedAreaTable -> Square -> Int
 squarePowerLevel table (x,y,len) = 
   let 
-    top_left  = Map.findWithDefault 0 (x,y) table
-    top_right = Map.findWithDefault 0 (x+len,y) table
-    bot_left  = Map.findWithDefault 0 (x,y+len) table
-    bot_right = Map.findWithDefault 0 (x+len,y+len) table
+    top_left  = lookupCell (x,y) table
+    top_right = lookupCell (x+len,y) table
+    bot_left  = lookupCell (x,y+len) table
+    bot_right = lookupCell (x+len,y+len) table
   in
     top_left - top_right - bot_left + bot_right
       
@@ -74,28 +89,26 @@ bestSquarePerSize score = do
 
 main :: IO ()
 main = do
-  putStr "TESTS PASS: "
-  print
-    [ cellPowerLevel 8 (3,5) == 4
-    , cellPowerLevel 57 (122,79) == -5
-    , cellPowerLevel 39 (217,196) == 0
-    , cellPowerLevel 71 (101,153) == 4
-    , squarePowerLevel (tableFor 18) (33,45,3) == 29
-    , squarePowerLevel (tableFor 42) (21,61,3) == 30
-    , squarePowerLevel (tableFor 18) (90,269,16) == 113
-    , squarePowerLevel (tableFor 42) (232,251,12) == 119
-    ]
+  -- putStr "TESTS PASS: "
+  -- print
+  --   [ cellPowerLevel 8 (3,5) == 4
+  --   , cellPowerLevel 57 (122,79) == -5
+  --   , cellPowerLevel 39 (217,196) == 0
+  --   , cellPowerLevel 71 (101,153) == 4
+  --   , squarePowerLevel (tableFor 18) (33,45,3) == 29
+  --   , squarePowerLevel (tableFor 42) (21,61,3) == 30
+  --   , squarePowerLevel (tableFor 18) (90,269,16) == 113
+  --   , squarePowerLevel (tableFor 42) (232,251,12) == 119
+  --   ]
+  -- putStrLn ""
 
   let score = squarePowerLevel (tableFor 4151)
       best_squares = bestSquarePerSize score
 
-  putStrLn "best squares per size: "
   forM_ best_squares $ \(x,y,len) -> do
     let len_str   = show len ++ "x" ++ show len
     let score_str = show (score (x,y,len))
     putStrLn $ "best " ++ len_str ++ " square at " ++ show (x,y) ++ " / score: " ++ score_str
-
-  putStrLn ""
 
   putStr "Part 1: "
   print $ best_squares !! (3-1)

@@ -15,6 +15,7 @@ common config
     , transformers
     , QuickCheck
     , time
+    , vector
   default-language: Haskell2010
   other-modules: 
     ParseUtils
