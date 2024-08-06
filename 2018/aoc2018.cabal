@@ -16,9 +16,11 @@ common config
     , QuickCheck
     , time
     , vector
+    , comonad
   default-language: Haskell2010
   other-modules: 
     ParseUtils
+    Zipper
   default-extensions: 
     LambdaCase
     ScopedTypeVariables
