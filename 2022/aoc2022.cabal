@@ -102,9 +102,9 @@ executable day15
     build-depends:    base >=4.14.3.0
                     , megaparsec
                     , containers
+                    , aoclib
     default-language: Haskell2010
     other-modules:    Utils
-                    , Cuboid
 
 executable day17
     main-is:          Day17.hs

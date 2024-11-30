@@ -14,10 +14,8 @@ common config
         , transformers
         , search-algorithms
         , QuickCheck
+        , aoclib
     default-language: Haskell2010
-    other-modules:    Utils
-                    , Graph
-                    , PairingHeap
     default-extensions: 
         LambdaCase
         ScopedTypeVariables

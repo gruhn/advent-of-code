@@ -36,6 +36,10 @@ module Graph
   , componentOutDegree
   , contractNode
   , stoerWagner
+  -- properties:
+  , prop_clean_node_delete
+  , prop_invariant_pre_suc_keyset_match
+  , prop_node_contract
   ) where
 
 import Data.IntMap (IntMap)
@@ -51,8 +55,7 @@ import Test.QuickCheck (Arbitrary, (===), discard, forAll)
 import qualified Test.QuickCheck as QuickCheck
 import Test.QuickCheck.Arbitrary (Arbitrary(arbitrary))
 import Test.QuickCheck.Property (Property)
-import Test.QuickCheck.Monadic (assert, PropertyM, monadicIO)
-import qualified GHC.List as List
+import Test.QuickCheck.Monadic (assert, monadicIO)
 
 type Node = Int
 

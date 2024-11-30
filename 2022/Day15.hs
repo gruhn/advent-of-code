@@ -1,7 +1,7 @@
 module Main where
 
 import Utils (Parser, parseHardError)
-import Text.Megaparsec (sepBy)
+import Text.Megaparsec (sepEndBy)
 import Text.Megaparsec.Char (newline, string, hspace)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 import Data.Function (on)
@@ -16,7 +16,7 @@ import Cuboid ( Cuboid(Cuboid), Range(Range) )
 type Point = (Int,Int)
 
 parser :: Parser [(Point, Point)] 
-parser = sensor `sepBy` newline
+parser = sensor `sepEndBy` newline
   where
     integer :: Parser Int
     integer = signed hspace decimal

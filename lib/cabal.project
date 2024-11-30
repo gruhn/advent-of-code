@@ -1,4 +1,4 @@
 profiling: True
 profiling-detail: late
 
-packages: ../lib .
+packages: .
