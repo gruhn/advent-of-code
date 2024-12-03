@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad (guard)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import Test.QuickCheck (Arbitrary (arbitrary))
 
 type Parser = P.Parsec Void String
@@ -29,6 +29,15 @@ symbol = L.symbol space
 
 integer :: Parser Int
 integer = L.signed space (lexeme L.decimal)
+
+matchAll :: forall a. Parser a -> Parser [a]
+matchAll p = catMaybes <$> P.many maybe_a
+  where
+    maybe_a :: Parser (Maybe a)
+    maybe_a = 
+      P.withRecovery 
+        (const $ Nothing <$ P.anySingle)
+        (Just <$> p)
 
 parse :: Parser a -> String -> a
 parse parser input =

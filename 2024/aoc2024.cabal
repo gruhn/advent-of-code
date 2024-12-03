@@ -28,3 +28,8 @@ executable day01
 executable day02
     import:  config
     main-is: Day02.hs
+
+executable day03
+    import:  config
+    main-is: Day03.hs
+
