@@ -20,6 +20,7 @@ common config
         LambdaCase
         ScopedTypeVariables
         TupleSections
+        OverloadedRecordDot
 
 executable day01
     import:  config
@@ -40,3 +41,7 @@ executable day04
 executable day05
     import:  config
     main-is: Day05.hs
+
+executable day06
+    import:  config
+    main-is: Day06.hs
