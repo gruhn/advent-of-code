@@ -6,6 +6,10 @@ import Text.Megaparsec.Char (newline, string)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Prelude hiding ((||))
 import Control.Monad.Combinators.NonEmpty (some)
+import Control.Monad (guard)
+import Data.Foldable (asum, toList)
+import Data.Maybe (isJust)
+import qualified Data.List.NonEmpty as NonEmpty
 
 type Equation = (Int, NonEmpty Int)
 
@@ -15,28 +19,44 @@ parser = equation `sepEndBy` newline
     equation :: Parser Equation
     equation = (,) <$> integer <* string ": " <*> some integer
 
-type Operator = Int -> Int -> Int
+type Operator = Int -> Int -> Maybe Int
 
-(||) :: Operator
-(||) a b = read $ show a ++ show b
+trySubtract :: Int -> Int -> Maybe Int
+trySubtract a b = do
+  guard $ a >= b
+  return $ a - b
+
+tryDivide :: Int -> Int -> Maybe Int
+tryDivide a b = do
+  guard $ a `mod` b == 0
+  return $ a `div` b
+
+tryStripSuffix :: Int -> Int -> Maybe Int
+tryStripSuffix a b = do
+  let digits = length $ show b
+      (prefix, suffix) = divMod a (10 ^ digits)
+  guard $ suffix == b
+  return prefix
 
 hasSolution :: [Operator] -> Equation -> Bool
-hasSolution operators (result, first_operand :| rest_operands) =
+hasSolution operators (result, operands) = 
   let
-    check :: [Int] -> Int -> Bool
-    check []                   temp = temp == result
-    check (operand : operands) temp  
-      | temp > result = False
-      | otherwise = any (check operands) [ temp `op` operand | op <- operators ]
+    check_reverse :: Int -> NonEmpty Int -> Maybe ()
+    check_reverse result_rest (operand1 :| []) = 
+      guard $ result_rest == operand1
+    check_reverse result_rest (operand1 :| operand2 : rest_operands) = asum $ do
+      op  <- operators
+      res <- toList $ result_rest `op` operand1
+      return $ check_reverse res (operand2 :| rest_operands)
   in
-    check rest_operands first_operand 
+    isJust $ check_reverse result (NonEmpty.reverse operands)
 
 main :: IO ()
 main = do
-  input <- parseFile parser "input/07.txt"
+  equations <- parseFile parser "input/07.txt"
 
   putStr "Part 1: "
-  print $ sum $ map fst $ filter (hasSolution [(+), (*)]) input
+  print $ sum $ map fst $ filter (hasSolution [trySubtract, tryDivide]) equations
 
   putStr "Part 2: "
-  print $ sum $ map fst $ filter (hasSolution [(+), (*), (||)]) input
+  print $ sum $ map fst $ filter (hasSolution [trySubtract, tryDivide, tryStripSuffix]) equations
