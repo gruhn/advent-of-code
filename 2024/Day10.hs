@@ -1,43 +1,42 @@
 module Main (main) where
+
 import Utils (withCoords)
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Control.Monad (guard)
 import Data.Char (digitToInt)
 import Data.Containers.ListUtils (nubOrd)
+import Data.Maybe (maybeToList)
 
 type Pos = (Int,Int)
 
-type Grid = Map Pos Int
+type TopographicMap = Map Pos Int
 
-neighbors :: Grid -> Pos -> [Pos]
-neighbors grid (x,y) = filter (`Map.member` grid) [(x-1,y), (x+1,y), (x,y-1), (x,y+1)]
+parse :: String -> TopographicMap
+parse = Map.map digitToInt . Map.fromList . withCoords . lines
 
-reachable :: Grid -> Pos -> Int -> [[Pos]]
-reachable grid pos height = do
-  neigh <- neighbors grid pos
-  case Map.lookup neigh grid of
-    Nothing -> []
-    Just h  -> do
-      guard $ h == height + 1
-      if h == 9 then
-        return [neigh]
-      else do
-        path <- reachable grid neigh h
-        return $ neigh : path
+trailsFrom :: TopographicMap -> Pos -> Int -> [[Pos]]
+trailsFrom topo_map (x,y) height =
+  if height == 9 then 
+    return [(x,y)]
+  else do
+    neighbor <- [(x-1,y), (x+1,y), (x,y-1), (x,y+1)]
+    neighbor_height <- maybeToList $ Map.lookup neighbor topo_map 
+    guard $ neighbor_height == height + 1
+    trail <- trailsFrom topo_map neighbor neighbor_height 
+    return $ (x,y) : trail
 
 main :: IO ()
 main = do
-  input <- Map.map digitToInt . Map.fromList . withCoords . lines <$> readFile "input/10.txt"
+  topo_map <- parse <$> readFile "input/10.txt"
+
+  let trailheads :: [Pos]
+      trailheads = [ pos | (pos, 0) <- Map.toList topo_map ]
 
   putStr "Part 1: "
-  print $ sum $ do
-    (pos, h) <- Map.toList input
-    guard $ h == 0
-    return $ length $ nubOrd $ map last $ reachable input pos 0
+  let score trailhead = length $ nubOrd $ map last $ trailsFrom topo_map trailhead 0
+  print $ sum $ map score trailheads
 
   putStr "Part 2: "
-  print $ sum $ do
-    (pos, h) <- Map.toList input
-    guard $ h == 0
-    return $ length $ nubOrd $ reachable input pos 0
+  let rating trailhead = length $ nubOrd $ trailsFrom topo_map trailhead 0
+  print $ sum $ map rating trailheads
