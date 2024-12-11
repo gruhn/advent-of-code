@@ -17,6 +17,7 @@ common config
         , aoclib
         , parser-combinators
         , process
+        , monad-memo
     default-language: Haskell2010
     default-extensions: 
         LambdaCase
@@ -63,3 +64,7 @@ executable day09
 executable day10
     import:  config
     main-is: Day10.hs
+
+executable day11
+    import:  config
+    main-is: Day11.hs
