@@ -2,3 +2,7 @@ profiling: True
 profiling-detail: late
 
 packages: ../lib/ .
+
+source-repository-package
+    type: git
+    location: git@github.com:gruhn/SMT.git
