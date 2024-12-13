@@ -17,7 +17,6 @@ common config
         , aoclib
         , parser-combinators
         , process
-        , SMT
     default-language: Haskell2010
     default-extensions: 
         LambdaCase
