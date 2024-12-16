@@ -151,6 +151,17 @@ safeMaximum as
   | null as   = Nothing
   | otherwise = Just (maximum as)
 
+minimaBy :: forall a t. (Ord a, Foldable t) => (a -> a -> Ordering) -> t a -> [a]
+minimaBy comp = foldr go []
+  where
+    go :: a -> [a] -> [a]
+    go a []     = [a]
+    go a (b:bs) = 
+      case comp a b of
+        EQ -> a:b:bs
+        LT -> [a]
+        GT -> b:bs
+
 combinations :: [a] -> [(a,a)]
 combinations [] = []
 combinations (a:as) =
