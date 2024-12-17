@@ -83,3 +83,7 @@ executable day14
 executable day16
     import:  config
     main-is: Day16.hs
+
+executable day17
+    import:  config
+    main-is: Day17.hs
