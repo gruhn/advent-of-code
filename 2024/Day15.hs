@@ -59,17 +59,28 @@ parser = (,) <$> grid <* newline <*> moves
 moveItem :: Dir -> Pos -> Grid -> Maybe Grid
 moveItem dir pos grid_0 = 
   case Map.lookup pos grid_0 of
+    -- trying to move empty space --> succeed but return grid unchanged
     Nothing   -> Just grid_0
+    -- trying to move wall --> always fail
     Just Wall -> Nothing
+    -- trying to move a large box --> ...
     Just (LargeBox pos_adjacent) -> do
+      -- the two new positions occupied by the box if moving succeeds:
       let new_pos = step dir pos
       let new_pos_adjacent = step dir pos_adjacent
+      -- remove the old positions from the grid:
       let grid_1 = Map.delete pos $ Map.delete pos_adjacent grid_0
+      -- Try to push items out of the way that occupy the two new positions.
+      -- If this fails for eihter position, then the box can't be moved:
       grid_2 <- moveItem dir new_pos grid_1
       grid_3 <- moveItem dir new_pos_adjacent grid_2
+      -- Pushing items out of the way succeeded, so insert the box into 
+      -- the new positions:
       return 
         $ Map.insert new_pos (LargeBox new_pos_adjacent)
         $ Map.insert new_pos_adjacent (LargeBox new_pos) grid_3
+    -- Trying to move small box or the robot --> just like moving a large 
+    -- box but only considering one position:
     Just robot_or_small_box -> do
       let new_pos = step dir pos
       let grid_1 = Map.delete pos grid_0
