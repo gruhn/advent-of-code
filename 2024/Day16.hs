@@ -2,100 +2,86 @@ module Main (main) where
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Utils (withCoords, minimaBy)
-import Data.Foldable (find)
-import Data.Maybe (fromJust)
+import Utils (withCoords)
 import Data.Containers.ListUtils (nubOrd)
 import Control.Monad (guard)
-import Data.Ord (comparing)
 import qualified Data.Set as Set
+import Data.Set (Set)
 
-type Pos = (Int,Int)
+type Pos = (Int, Int)
 
 data Dir = North | West | South | East
   deriving (Eq, Ord, Show)
 
 type Node = (Dir, Pos)
 
-step :: Dir -> Pos -> Pos
-step dir (x,y) =
+step :: Node -> Node
+step (dir, (x,y)) =
   case dir of
-    North -> (x,y-1)
-    South -> (x,y+1)
-    West  -> (x-1,y)
-    East  -> (x+1,y)
+    North -> (dir, (x,y-1))
+    South -> (dir, (x,y+1))
+    West  -> (dir, (x-1,y))
+    East  -> (dir, (x+1,y))
 
-turnClockwise :: Dir -> Dir
-turnClockwise dir =
+turnClockwise :: Node -> Node
+turnClockwise (dir, pos) =
   case dir of
-    North -> East
-    East  -> South
-    South -> West
-    West  -> North
+    North -> (East , pos)
+    East  -> (South, pos)
+    South -> (West , pos)
+    West  -> (North, pos)
 
-turnCounterClockwise :: Dir -> Dir
+turnCounterClockwise :: Node -> Node
 turnCounterClockwise =
   turnClockwise . turnClockwise . turnClockwise
 
-next :: Map Pos Char -> Node -> [(Node, Int)]
-next grid (dir, pos) = maybe_step ++ turns
-  where
-    turns :: [(Node, Int)]
-    turns =
-      [ ((turnClockwise dir, pos), 1000)
-      , ((turnCounterClockwise dir, pos), 1000)
-      ]
+data Backpointer = Back Int [Node]
 
-    maybe_step :: [(Node, Int)]
-    maybe_step =
-      let new_state = (dir, step dir pos) in
-      case Map.lookup (snd new_state) grid of
-        Just c | c /= '#' -> [(new_state, 1)]
-        _ -> []
+join :: Backpointer -> Backpointer -> Backpointer
+join (Back cost1 preds1) (Back cost2 preds2) 
+  | cost1 < cost2 = Back cost1 preds1
+  | cost1 > cost2 = Back cost2 preds2
+  | otherwise     = Back cost1 (preds1 ++ preds2)
 
-dijkstra :: (Node -> [(Node, Int)]) -> Node -> [Map Node (Int, [Node])]
+type PriorityQueue = Map Int [(Node, Node)]
+
+dijkstra :: (Node -> [(Node, Int)]) -> Node -> Map Node Backpointer
 dijkstra transitions start = go (Map.singleton 0 [(start, start)]) Map.empty
   where
-    go :: Map Int [(Node, Node)] -> Map Node (Int, [Node]) -> [Map Node (Int, [Node])]
-    go worklist dist =
-      case Map.minViewWithKey worklist of
-        Nothing -> []
-        Just ((next_nodes_dist, next_nodes), worklist_without_next) ->
+    insert_backpointer :: Int -> (Node, Node) -> Map Node Backpointer -> Map Node Backpointer 
+    insert_backpointer cost (source, target) = Map.insertWith join target (Back cost [source])
+
+    go :: PriorityQueue -> Map Node Backpointer -> Map Node Backpointer
+    go queue backpointers =
+      case Map.minViewWithKey queue of
+        Nothing -> backpointers
+        Just ((next_nodes_cost, next_nodes), queue_without_next) ->
           let
-            f :: (Int, [Node]) -> (Int, [Node]) -> (Int, [Node])
-            f (cost1, ns1) (cost2, ns2)
-              | cost1 < cost2 = (cost1, ns1)
-              | cost1 > cost2 = (cost2, ns2)
-              | otherwise     = (cost1, ns1 ++ ns2)
+            new_backpointers :: Map Node Backpointer
+            new_backpointers = foldr (insert_backpointer next_nodes_cost) backpointers next_nodes 
 
-            new_dist :: Map Node (Int, [Node])
-            new_dist = Map.unionWith f dist $ Map.fromListWith f $ do 
-              (src, trg) <- next_nodes
-              return (trg, (next_nodes_dist, [src]))
-
-            worklist_additions :: Map Int [(Node, Node)]
-            worklist_additions = Map.map nubOrd 
-              $ Map.fromListWith (++) $ do
+            queue_additions :: PriorityQueue
+            queue_additions = Map.map nubOrd $ Map.fromListWith (++) $ do
               (_, node)             <- next_nodes
-              (neighbor, step_dist) <- transitions node
-              let new_neighbor_dist = next_nodes_dist + step_dist
-              case Map.lookup neighbor new_dist of
+              (neighbor, step_cost) <- transitions node
+              let new_neighbor_cost = next_nodes_cost + step_cost
+              case Map.lookup neighbor new_backpointers of
                 Nothing -> do 
-                  return (new_neighbor_dist, [(node, neighbor)])
-                Just (old_neighbor_dist, _) -> do
-                  guard (new_neighbor_dist < old_neighbor_dist)
-                  return (new_neighbor_dist, [(node, neighbor)])
+                  return (new_neighbor_cost, [(node, neighbor)])
+                Just (Back old_neighbor_cost _) -> do
+                  guard (new_neighbor_cost <= old_neighbor_cost)
+                  return (new_neighbor_cost, [(node, neighbor)])
 
-            new_worklist :: Map Int [(Node, Node)]
-            new_worklist = Map.unionWith (++) worklist_without_next worklist_additions
+            new_queue :: PriorityQueue
+            new_queue = Map.unionWith (++) queue_without_next queue_additions
           in
-            dist : go new_worklist new_dist
+            go new_queue new_backpointers
 
-bestPaths :: Node -> Map Node (Int, [Node]) -> [[Node]]
+bestPaths :: Node -> Map Node Backpointer -> [[Node]]
 bestPaths target dist_map = 
   case Map.lookup target dist_map of
     Nothing -> error "bestPath: Nothing"
-    Just (_, pred_nodes) -> do
+    Just (Back _ pred_nodes) -> do
       pred_node <- pred_nodes
       if pred_node == target then
         return [target]
@@ -103,26 +89,46 @@ bestPaths target dist_map =
         path <- bestPaths pred_node dist_map
         return (target : path)
 
+parse :: String -> (Set Pos, Pos, Pos)
+parse input = (walkable_poses, start_pos, target_pos)
+  where
+    pos_char_pairs :: [(Pos, Char)]
+    pos_char_pairs = withCoords $ lines input
+
+    start_pos = head [ pos | (pos, 'S') <- pos_char_pairs ]
+    target_pos = head [ pos | (pos, 'E') <- pos_char_pairs ]
+    walkable_poses = Set.fromList [ pos | (pos, c) <- pos_char_pairs, c /= '#' ]
+
 main :: IO ()
 main = do
-  grid <- Map.fromList . withCoords . lines <$> readFile "input/16.txt"
+  (walkable_poses, start_pos, target_pos) <- parse <$> readFile "input/16.txt"
 
-  let start_pos  = fst $ fromJust $ find ((=='S') . snd) $ Map.toList grid
-      target_pos = fst $ fromJust $ find ((=='E') . snd) $ Map.toList grid
+  let transitions :: Node -> [(Node, Int)]
+      transitions node =
+        let
+          turns :: [(Node, Int)]
+          turns = [(turnClockwise node, 1000), (turnCounterClockwise node, 1000)]
 
-      dist_map = last $ dijkstra (next grid) (East, start_pos)
-
-      targets = minimaBy (comparing snd) $ do 
-        (node@(_, pos), (dist, _)) <- Map.toList dist_map
-        guard $ pos == target_pos
-        return (node, dist)
+          maybe_step :: [(Node, Int)]
+          maybe_step = do
+            let next_node = step node
+            guard $ Set.member (snd next_node) walkable_poses
+            return (next_node, 1)
+        in
+          maybe_step ++ turns
+  
+      backpointers :: Map Node Backpointer
+      backpointers = dijkstra transitions (East, start_pos)
 
   putStr "Part 1: "
-  print $ map snd targets 
+  print $ minimum $ do
+    ((_, pos), Back cost _) <- Map.toList backpointers
+    guard $ pos == target_pos
+    return cost
 
   putStr "Part 2: "
   print $ Set.size $ Set.fromList $ do
-    (target_node, _) <- targets
-    path <- bestPaths target_node dist_map
-    (_, pos) <- path
-    return pos
+    (dir, pos) <- Map.keys backpointers
+    guard $ pos == target_pos 
+    path <- bestPaths (dir, pos) backpointers
+    map snd path
