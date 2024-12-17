@@ -80,6 +80,10 @@ executable day14
     import:  config
     main-is: Day14.hs
 
+executable day15
+    import:  config
+    main-is: Day15.hs
+
 executable day16
     import:  config
     main-is: Day16.hs
