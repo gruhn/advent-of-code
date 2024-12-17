@@ -2,23 +2,20 @@ module Main (main) where
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Utils (withCoords)
+import Utils (withCoords, minimaBy)
 import Data.Foldable (find)
 import Data.Maybe (fromJust)
-import Algorithm.Search (dijkstraAssoc)
 import Data.Containers.ListUtils (nubOrd)
 import Control.Monad (guard)
 import Data.Ord (comparing)
+import qualified Data.Set as Set
 
 type Pos = (Int,Int)
-
-parse :: String -> Map Pos Char
-parse = Map.fromList . withCoords . lines
 
 data Dir = North | West | South | East
   deriving (Eq, Ord, Show)
 
-type State = (Dir, Pos)
+type Node = (Dir, Pos)
 
 step :: Dir -> Pos -> Pos
 step dir (x,y) =
@@ -40,70 +37,92 @@ turnCounterClockwise :: Dir -> Dir
 turnCounterClockwise =
   turnClockwise . turnClockwise . turnClockwise
 
-next :: Map Pos Char -> State -> [(State, Int)]
+next :: Map Pos Char -> Node -> [(Node, Int)]
 next grid (dir, pos) = maybe_step ++ turns
   where
-    turns :: [(State, Int)]
+    turns :: [(Node, Int)]
     turns =
       [ ((turnClockwise dir, pos), 1000)
       , ((turnCounterClockwise dir, pos), 1000)
       ]
 
-    maybe_step :: [(State, Int)]
+    maybe_step :: [(Node, Int)]
     maybe_step =
       let new_state = (dir, step dir pos) in
       case Map.lookup (snd new_state) grid of
         Just c | c /= '#' -> [(new_state, 1)]
         _ -> []
 
-type Path = ([State], Int)
+dijkstra :: (Node -> [(Node, Int)]) -> Node -> [Map Node (Int, [Node])]
+dijkstra transitions start = go (Map.singleton 0 [(start, start)]) Map.empty
+  where
+    go :: Map Int [(Node, Node)] -> Map Node (Int, [Node]) -> [Map Node (Int, [Node])]
+    go worklist dist =
+      case Map.minViewWithKey worklist of
+        Nothing -> []
+        Just ((next_nodes_dist, next_nodes), worklist_without_next) ->
+          let
+            f :: (Int, [Node]) -> (Int, [Node]) -> (Int, [Node])
+            f (cost1, ns1) (cost2, ns2)
+              | cost1 < cost2 = (cost1, ns1)
+              | cost1 > cost2 = (cost2, ns2)
+              | otherwise     = (cost1, ns1 ++ ns2)
 
--- bestPaths :: (State -> [(State, Int)]) -> State -> [Path]
--- bestPaths transitions start = do
---   (next_state, cost) <- transitions start
---   (path, path_cost)  <- minimaBy (comparing snd) $ bestPaths transitions next_state
---   return (next_state : path, cost + path_cost)
+            new_dist :: Map Node (Int, [Node])
+            new_dist = Map.unionWith f dist $ Map.fromListWith f $ do 
+              (src, trg) <- next_nodes
+              return (trg, (next_nodes_dist, [src]))
 
--- dijkstra :: (State -> [(State, Int)]) -> State -> [(State, Int)]
--- dijkstra transitions start = go (Map.singleton 0 [start]) Map.empty
---   where
---     go :: Map Int [State] -> Map State Int -> [(State, Int)]
---     go worklist dist =
---       case Map.minViewWithKey worklist of
---         Nothing -> []
---         Just ((next_nodes_dist, next_nodes), worklist_without_next) ->
---           let
---             min_next :: [(State, Int)]
---             min_next = map (,next_nodes_dist) next_nodes
+            worklist_additions :: Map Int [(Node, Node)]
+            worklist_additions = Map.map nubOrd 
+              $ Map.fromListWith (++) $ do
+              (_, node)             <- next_nodes
+              (neighbor, step_dist) <- transitions node
+              let new_neighbor_dist = next_nodes_dist + step_dist
+              case Map.lookup neighbor new_dist of
+                Nothing -> do 
+                  return (new_neighbor_dist, [(node, neighbor)])
+                Just (old_neighbor_dist, _) -> do
+                  guard (new_neighbor_dist < old_neighbor_dist)
+                  return (new_neighbor_dist, [(node, neighbor)])
 
---             new_dist :: Map State Int
---             new_dist = dist <> Map.fromList min_next
+            new_worklist :: Map Int [(Node, Node)]
+            new_worklist = Map.unionWith (++) worklist_without_next worklist_additions
+          in
+            dist : go new_worklist new_dist
 
---             worklist_additions :: Map Int [State]
---             worklist_additions = Map.map nubOrd . Map.fromListWith (<>) $ do
---               node             <- next_nodes
---               (neighbor, dist) <- transitions node
---               let new_neighbor_dist = next_nodes_dist + dist
---                   old_neighbor_dist = Map.findWithDefault maxBound neighbor new_dist
---               guard (new_neighbor_dist < old_neighbor_dist)
---               return (new_neighbor_dist, [neighbor])
-
---             new_worklist :: Map Int [State]
---             new_worklist = worklist_without_next <> worklist_additions
---           in
---             min_next ++ go new_worklist new_dist
+bestPaths :: Node -> Map Node (Int, [Node]) -> [[Node]]
+bestPaths target dist_map = 
+  case Map.lookup target dist_map of
+    Nothing -> error "bestPath: Nothing"
+    Just (_, pred_nodes) -> do
+      pred_node <- pred_nodes
+      if pred_node == target then
+        return [target]
+      else do
+        path <- bestPaths pred_node dist_map
+        return (target : path)
 
 main :: IO ()
 main = do
-  grid <- parse <$> readFile "input/16.txt"
+  grid <- Map.fromList . withCoords . lines <$> readFile "input/16.txt"
 
   let start_pos  = fst $ fromJust $ find ((=='S') . snd) $ Map.toList grid
       target_pos = fst $ fromJust $ find ((=='E') . snd) $ Map.toList grid
 
-      is_target :: State -> Bool
-      is_target (_, pos) = pos == target_pos
+      dist_map = last $ dijkstra (next grid) (East, start_pos)
 
-  print $ dijkstraAssoc
-    (next grid)
-    is_target
-    (East, start_pos)
+      targets = minimaBy (comparing snd) $ do 
+        (node@(_, pos), (dist, _)) <- Map.toList dist_map
+        guard $ pos == target_pos
+        return (node, dist)
+
+  putStr "Part 1: "
+  print $ map snd targets 
+
+  putStr "Part 2: "
+  print $ Set.size $ Set.fromList $ do
+    (target_node, _) <- targets
+    path <- bestPaths target_node dist_map
+    (_, pos) <- path
+    return pos
