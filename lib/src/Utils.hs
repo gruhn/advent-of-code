@@ -249,3 +249,7 @@ iterateJust f a =
   case f a of
     Nothing -> [a]
     Just a' -> a : iterateJust f a'
+
+select :: [a] -> [(a, [a])]
+select []     = []
+select (a:as) = (a, as) : [ (b, a:bs) | (b,bs) <- select as ]
