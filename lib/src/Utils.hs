@@ -4,7 +4,7 @@ import qualified Text.Megaparsec as P
 import Data.Void (Void)
 import qualified Data.Set as Set
 import Data.Function (on)
-import Data.Foldable (maximumBy, toList)
+import Data.Foldable (maximumBy, toList, minimumBy)
 import Data.List (group, sort, tails)
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Megaparsec.Char (hspace1)
@@ -145,6 +145,11 @@ safeMinimum :: (Ord a, Foldable t) => t a -> Maybe a
 safeMinimum as
   | null as   = Nothing
   | otherwise = Just (minimum as)
+
+safeMinimumBy :: Foldable t => (a -> a -> Ordering) -> t a -> Maybe a
+safeMinimumBy f as
+  | null as   = Nothing
+  | otherwise = Just (minimumBy f as)
 
 safeMaximum :: (Ord a, Foldable t) => t a -> Maybe a
 safeMaximum as
