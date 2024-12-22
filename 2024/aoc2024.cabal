@@ -100,6 +100,10 @@ executable day20
     import:  config
     main-is: Day20.hs
 
+executable day21
+    import:  config
+    main-is: Day21.hs
+
 executable day22
     import:  config
     main-is: Day22.hs
