@@ -1,8 +1,7 @@
 module Main (main) where
-import Utils (Parser, parseFile)
+import Utils (Parser, parseFile, countBy)
 import Text.Megaparsec (sepEndBy, some, endBy, choice)
 import Text.Megaparsec.Char (newline, char)
-import Control.Monad (guard)
 import Data.List (partition)
 
 type Schematic = [Bool]
@@ -27,7 +26,4 @@ main = do
   (locks, keys) <- partition isLock <$> parseFile parser "input/25.txt"
 
   putStr "Part 1: "
-  print $ length $ do
-    lock <- locks
-    key  <- keys
-    guard $ not $ overlap lock key
+  print $ countBy not $ overlap <$> locks <*> keys

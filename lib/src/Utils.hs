@@ -156,7 +156,7 @@ safeMaximum as
   | null as   = Nothing
   | otherwise = Just (maximum as)
 
-minimaBy :: forall a t. (Ord a, Foldable t) => (a -> a -> Ordering) -> t a -> [a]
+minimaBy :: forall a t. Foldable t => (a -> a -> Ordering) -> t a -> [a]
 minimaBy comp = foldr go []
   where
     go :: a -> [a] -> [a]
@@ -258,3 +258,8 @@ iterateJust f a =
 select :: [a] -> [(a, [a])]
 select []     = []
 select (a:as) = (a, as) : [ (b, a:bs) | (b,bs) <- select as ]
+
+
+-- | https://github.com/quchen/articles/blob/master/loeb-moeb.md
+loeb :: Functor f => f (f a -> a) -> f a
+loeb x = go where go = fmap ($ go) x
