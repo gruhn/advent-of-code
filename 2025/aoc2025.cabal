@@ -26,6 +26,10 @@ common config
         TupleSections
         OverloadedRecordDot
 
+executable day01
+    import:  config
+    main-is: Day01.hs
+
 executable day02
     import:  config
     main-is: Day02.hs
