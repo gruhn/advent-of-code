@@ -1,0 +1,31 @@
+cabal-version:   3.0
+name:            aoc2025
+version:         0.1.0.0
+license:         NONE
+build-type:      Simple
+
+common config
+    ghc-options: -Wall -Wno-unused-do-bind -Wno-type-defaults
+    build-depends:
+          base
+        , megaparsec
+        , containers
+        , unordered-containers
+        , transformers
+        , search-algorithms
+        , QuickCheck
+        , aoclib
+        , parser-combinators
+        , process
+        , random
+        , memoize
+    default-language: Haskell2010
+    default-extensions:
+        LambdaCase
+        ScopedTypeVariables
+        TupleSections
+        OverloadedRecordDot
+
+executable day02
+    import:  config
+    main-is: Day02.hs
