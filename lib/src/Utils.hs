@@ -34,8 +34,8 @@ matchAll :: forall a. Parser a -> Parser [a]
 matchAll p = catMaybes <$> P.many maybe_a
   where
     maybe_a :: Parser (Maybe a)
-    maybe_a = 
-      P.withRecovery 
+    maybe_a =
+      P.withRecovery
         (const $ Nothing <$ P.anySingle)
         (Just <$> p)
 
@@ -54,7 +54,7 @@ converge f a
   | otherwise = converge f (f a)
 
 fixpoint :: (Ord a, Eq b) => (a -> Set a) -> Set a -> (Map a b -> a -> b) -> Map a b -> Map a b
-fixpoint dep worklist f mapping = 
+fixpoint dep worklist f mapping =
   case Set.minView worklist of
     Nothing -> mapping
     Just (a, rest_worklist) ->
@@ -73,7 +73,7 @@ findCycle = go Set.empty . tails
     go _ [] = Nothing
     go _ [[]] = Nothing
     go seen ((a:as):ass) =
-      if a `elem` seen then 
+      if a `elem` seen then
         Just ([], a : takeWhile (/= a) as)
       else do
         (prefix, loop) <- go (Set.insert a seen) ass
@@ -102,6 +102,16 @@ chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
 chunksOf n as = chunk : chunksOf n rest
   where (chunk, rest) = splitAt n as
+
+splitBy :: (a -> Bool) -> [a] -> [[a]]
+splitBy cond = go []
+  where
+    go as [] = [as]
+    go as (b:bs) =
+      if cond b then
+        as : go [] bs
+      else
+        go (b:as) bs
 
 takeDistinct :: Ord a => [a] -> [a]
 takeDistinct = go Set.empty
@@ -161,7 +171,7 @@ minimaBy comp = foldr go []
   where
     go :: a -> [a] -> [a]
     go a []     = [a]
-    go a (b:bs) = 
+    go a (b:bs) =
       case comp a b of
         EQ -> a:b:bs
         LT -> [a]
@@ -250,7 +260,7 @@ maximaBy comp = foldr go []
         GT -> [a]    -- a is greater ==> reject previous results
 
 iterateJust :: (a -> Maybe a) -> a -> [a]
-iterateJust f a = 
+iterateJust f a =
   case f a of
     Nothing -> [a]
     Just a' -> a : iterateJust f a'
