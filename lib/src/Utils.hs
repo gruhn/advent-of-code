@@ -15,6 +15,8 @@ import qualified Data.Map as Map
 import Control.Monad (guard)
 import Data.Maybe (fromMaybe, catMaybes)
 import Test.QuickCheck (Arbitrary (arbitrary))
+import Control.Monad.Trans.State (State)
+import qualified Control.Monad.Trans.State as State
 
 type Parser = P.Parsec Void String
 
@@ -273,3 +275,19 @@ select (a:as) = (a, as) : [ (b, a:bs) | (b,bs) <- select as ]
 -- | https://github.com/quchen/articles/blob/master/loeb-moeb.md
 loeb :: Functor f => f (f a -> a) -> f a
 loeb x = go where go = fmap ($ go) x
+
+type Memo k v = State (Map k v) v
+
+memo :: Ord k => (k -> State (Map k v) v) -> k -> State (Map k v) v
+memo f key = do
+  cache_0 <- State.get
+  case Map.lookup key cache_0 of
+    Just value -> return value
+    Nothing -> do
+      value <- f key
+      State.modify (Map.insert key value)
+      return value
+
+evalMemo :: Memo k v -> v
+evalMemo mem = State.evalState mem Map.empty
+
