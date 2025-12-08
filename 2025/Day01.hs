@@ -1,20 +1,13 @@
 module Main (main) where
-
-import Utils (Parser, parseFile, countBy)
-import Control.Applicative ((<|>))
-import Text.Megaparsec (sepEndBy)
-import Text.Megaparsec.Char (newline, char)
-import Text.Megaparsec.Char.Lexer (decimal)
 import Data.List (scanl', tails)
 
-parser :: Parser [Int]
-parser = (left_turn <|> right_turn) `sepEndBy` newline
-  where
-    left_turn :: Parser Int
-    left_turn = char 'L' *> (negate <$> decimal)
-
-    right_turn :: Parser Int
-    right_turn = char 'R' *> decimal
+parse :: String -> [Int]
+parse input = do
+  line <- lines input
+  return $ case line of
+    ('R':rest) -> read rest
+    ('L':rest) -> read rest * (-1)
+    _ -> error ("parse error: " ++ line)
 
 divides :: Int -> Int -> Bool
 divides a b = b `mod` a == 0
@@ -25,11 +18,11 @@ multiplesInRange mult range_start range_end =
 
 main :: IO ()
 main = do
-  turns <- parseFile parser "input/01.txt"
+  turns <- parse <$> readFile "input/01.txt"
   let partial_sums = scanl' (+) 50 turns
 
   putStr "Part 1: "
-  print $ countBy (100 `divides`) partial_sums
+  print $ length $ filter (100 `divides`) partial_sums
 
   putStr "Part 2: "
   print $ sum $ do

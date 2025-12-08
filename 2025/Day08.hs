@@ -1,5 +1,5 @@
 module Main (main) where
-import Utils (Parser, parseFile, Vec3 (..), takeUntil)
+import Utils (Parser, parseFile, Vec3 (..))
 import Text.Megaparsec.Char.Lexer (decimal)
 import Text.Megaparsec.Char (char, newline)
 import Text.Megaparsec (sepEndBy)
@@ -7,7 +7,6 @@ import Data.List (tails, sort, group, scanl', sortOn, find)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Ord (Down(..))
-import Data.Foldable (traverse_)
 import Data.Foldable (Foldable(toList))
 
 type Pos = Vec3 Int
