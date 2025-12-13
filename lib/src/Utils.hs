@@ -291,3 +291,5 @@ memo f key = do
 evalMemo :: Memo k v -> v
 evalMemo mem = State.evalState mem Map.empty
 
+adjacentPairs :: [a] -> [(a,a)]
+adjacentPairs as = [ (a1,a2) | (a1:a2:_) <- tails as ]
